@@ -1,0 +1,134 @@
+---
+title: "Assignment 1"
+subtitle: "Density Estimation and Clustering"
+author: "Alexander, Ulrik, Hannes"
+date: "`r format(Sys.time(), '%d/%b/%Y')`"
+output: 
+   html_document:
+    code_folding: hide
+    theme: cerulean
+    highlight: textmate
+    number_sections: false
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Boston Housing Data
+
+```{r}
+data("Boston", package = "MASS")
+X <- scale(Boston[,c(13,6)])
+plot(X,as=1)
+```
+
+# Questions
+
+## 1. Estimate Joint Bivariate Density
+
+We want to estimate the joint bivariate density using a kernel estimator with the same bandwidth in both dimensions: $h = (a, a)$. 
+
+```{r}
+library(sm)
+plot(X,as=1,col=8)
+
+# Select h. Not sure how we should use the hint. 
+# Which of the following values should we trust?
+# Looks like we should find this maximum manually, but how?
+h1 <- h.select(X, method = "cv")
+h2 <- hcv(X, method = "cv")
+
+# Density estimation using the value of a found above. 
+sm.density(X, h = h1[[1]]*c(1,1), display="slice",props=c(25,50,75,95),col=2,add=TRUE)
+sm.density(X, h = 0.1*c(1,1), display="slice",props=c(25,50,75,95),col=2,add=TRUE)
+```
+
+The maximum log-likelihood cross-validation method will be used to choose the value of $a$. Then, the density will be estimated using the value of $a$.
+
+```{r}
+# Try to estimate "manually" to check if we get similar value to above. 
+# Does not give sensible results. How should we maximize this manually? :))
+
+lstat.min <- min(X[,1])
+lstat.max <- max(X[,1])
+rm.min <- min(X[,2])
+rm.max <- max(X[,2])
+grid.values <- 15
+lst <- seq(from = lstat.min, to = lstat.max, length.out = grid.values)
+rme <- seq(from = rm.min, to = rm.max, length.out = grid.values)
+maxes <- c() # Slow, but alright for testing I guess. 
+objectives <- c() # Slow, but alright for testing I guess.
+for (i in 1:grid.values){
+   for (j in 1:grid.values){
+      new.point <- matrix(c(lst[i], rme[j]), ncol = 2)
+      f <- function(x){
+         f.hat <- sm.density(X,h=x*c(1,1),display="none",eval.grid=FALSE, eval.points = new.point)
+         log(f.hat$estimate)
+      }
+      maxes <- c(maxes, optimize(f, interval = c(0.1, 1), maximum = T)$maximum)
+      objectives <- c(objectives, optimize(f, interval = c(0.1, 1), maximum = T)$objective)
+   }
+}
+
+m.id <- which.max(objectives)
+maxes[m.id]
+
+# The 1d-optimization in optimize depends on at which point the sm is evaluated. Want to try to maximize over the
+# entire grid + maximize on the given range of discrete a-values. 
+```
+
+## 2. Hierarchical Clustering
+
+```{r}
+library(ggplot2)
+library(dplyr)
+hcl1 <- hclust(dist(X), method="ward.D")
+plot(hcl1)
+clusts <- cutree(hcl1, 3)
+
+df <- data.frame(lstat = X[,1], rm = X[,2], col = factor(clusts))
+ggplot(df, aes(x = rm, y = lstat)) + 
+   geom_point(aes(colour = col)) +
+   theme_minimal()
+
+```
+
+
+## 3. For each of the Clusters, do ...
+
+### Cluster 1
+
+```{r}
+# Data from cluster 1.
+clust1.data <- df %>% dplyr::filter(col == "1")
+
+# Non-parametric estimation of the joint density. 
+plot(clust1.data[, c(1,2)])
+sm.density(clust1.data[, c(1,2)], h = h1[[1]]*c(1,1), display="slice",props=c(75),col=2,add=TRUE)
+```
+
+### Cluster 2
+
+```{r}
+# Data from cluster 1.
+clust2.data <- df %>% dplyr::filter(col == "2")
+
+# Non-parametric estimation of the joint density. 
+plot(clust2.data[, c(1,2)])
+sm.density(clust2.data[, c(1,2)], h = h1[[1]]*c(1,1), display="slice",props=c(75),col=2,add=TRUE)
+```
+
+### Cluster 3
+
+```{r}
+# Data from cluster 1.
+clust3.data <- df %>% dplyr::filter(col == "3")
+
+# Non-parametric estimation of the joint density. 
+plot(clust3.data[, c(1,2)])
+sm.density(clust3.data[, c(1,2)], h = h1[[1]]*c(1,1), display="slice",props=c(75),col=2,add=TRUE)
+```
+
+## 4. Repeat 2 and 3, with Automatically Selected Optimal Number of Clusters
