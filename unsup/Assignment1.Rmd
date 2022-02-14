@@ -79,6 +79,56 @@ maxes[m.id]
 # entire grid + maximize on the given range of discrete a-values. 
 ```
 
+This was how I interpreted the task.
+```{r}
+data("Boston", package = "MASS")
+X <- scale(Boston[, c(13,6)])
+plot(X, as = 1)
+
+# Question 1
+library(sm)
+plot(X, as = 1, col = 8)
+sm.density(X, h = .5*c(1,1), display = "slice",
+           props = c(25,50,75,95), col = 2, add = T)
+
+# Valid choice of a
+a.domain <- seq(0.1, 1, by = 0.1)
+a.domain
+
+# Number of data points
+n <- dim(X)[1]
+n
+
+# Create storage for the sample log-likelihoods
+f.hat.cv <- matrix(0, nrow = length(a.domain))
+f.hat.cv
+
+# Iterate through a values
+for (i in 1:length(a.domain)) {
+  # Iterate over all data points
+  for (j in 1:n) {
+    # Remove data point j from the data 
+    point.j <- matrix(X[j,], ncol = 2)
+    X.j <- X[-j,]
+    # Calculate the likelihood of x.j (with x.j left out)
+    f.hat.j <- sm.density(X.j, h = a.domain[i]*c(1,1), display="none",
+                          eval.grid = F, eval.points = point.j)$estimate
+    # Add the logarithm of the estimate to the total log-likelihood
+    f.hat.cv[i] <- f.hat.cv[i] + log(f.hat.j)
+  }
+}
+f.hat.cv
+
+a.ml <- a.domain[which.max(f.hat.cv)]
+a.ml  # Maximum likelihood cross-validation value of a
+
+# Plotting the density estimation with our chosen a value
+plot(X, as = 1, col = 8)
+sm.density(X, h = a.ml*c(1,1), display = "slice",
+           props = c(25,50,75,95), col = 2, add = T)
+```
+
+
 ## 2. Hierarchical Clustering
 
 ```{r}
