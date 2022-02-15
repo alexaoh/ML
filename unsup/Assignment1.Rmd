@@ -17,6 +17,8 @@ knitr::opts_chunk$set(echo = TRUE, comment = "#>")
 library(sm)
 library(ggplot2)
 library(dplyr)
+library(cluster)
+library(fpc)
 ```
 
 # Load Boston Housing Data
@@ -34,33 +36,37 @@ plot(X,as=1)
 We want to estimate the joint bivariate density using a kernel estimator with the same bandwidth in both dimensions: $h = (a, a)$. The maximum log-likelihood cross-validation method will be used to choose the value of $a$. Then, the density will be estimated using this value of $a$. Some level curves of this estimated density are plotted below. 
 
 ```{r}
+optimal.bandwidth <- function(x, grid){
+   # Number of data points
+   n <- dim(x)[1]
+   
+   # Create storage for the sample log-likelihoods
+   f.hat.cv <- matrix(0, nrow = length(grid))
+   
+   # Iterate through a values
+   for (i in 1:length(grid)) {
+     # Iterate over all data points
+     for (j in 1:n) {
+       # Remove data point j from the data 
+       point.j <- matrix(x[j,], ncol = 2)
+       X.j <- x[-j,]
+       # Calculate the likelihood of x.j (with x.j left out)
+       f.hat.j <- sm.density(X.j, h = grid[i]*c(1,1), display="none",
+                             eval.grid = F, eval.points = point.j)$estimate
+       # Add the logarithm of the estimate to the total log-likelihood
+       f.hat.cv[i] <- f.hat.cv[i] + log(f.hat.j)
+     }
+   }
+   
+   # Maximum likelihood cross-validation value of a
+   return(grid[which.max(f.hat.cv)])
+}
+
 # Valid choice of a
 a.domain <- seq(0.1, 1, by = 0.1)
 
-# Number of data points
-n <- dim(X)[1]
-
-# Create storage for the sample log-likelihoods
-f.hat.cv <- matrix(0, nrow = length(a.domain))
-
-# Iterate through a values
-for (i in 1:length(a.domain)) {
-  # Iterate over all data points
-  for (j in 1:n) {
-    # Remove data point j from the data 
-    point.j <- matrix(X[j,], ncol = 2)
-    X.j <- X[-j,]
-    # Calculate the likelihood of x.j (with x.j left out)
-    f.hat.j <- sm.density(X.j, h = a.domain[i]*c(1,1), display="none",
-                          eval.grid = F, eval.points = point.j)$estimate
-    # Add the logarithm of the estimate to the total log-likelihood
-    f.hat.cv[i] <- f.hat.cv[i] + log(f.hat.j)
-  }
-}
-
-# Maximum likelihood cross-validation value of a
-a.ml <- a.domain[which.max(f.hat.cv)]
-
+a.ml <- optimal.bandwidth(X, a.domain)
+   
 # Plotting the density estimation with our chosen a value
 plot(X, as = 1, col = 8)
 sm.density(X, h = a.ml*c(1,1), display = "slice",
@@ -88,6 +94,7 @@ The dendrogram is cut into $k = 3$ clusters. The scatterplot below shows how the
 
 ```{r}
 clusts <- cutree(hcl1, 3)
+table(clusts)
 df <- data.frame(lstat = X[,1], rm = X[,2], cluster = factor(clusts))
 ggplot(df, aes(x = lstat, y = rm)) + 
    geom_point(aes(colour = cluster)) +
@@ -96,6 +103,9 @@ ggplot(df, aes(x = lstat, y = rm)) +
 
 
 ## 3. For each of the Clusters, do ...
+
+* Estimate the joint bivariate density conditional to the cluster.
+* Represent the estimated bivariate density with the 75\% level curve. 
 
 ### Cluster 1
 
@@ -135,7 +145,8 @@ sm.density(clust3.data[, c(1,2)], h = a.ml*c(1,1), display="slice",props=c(75),c
 The 75\% level curves of all three estimated densities are plotted below. 
 
 ```{r}
-plot(X, as=1, col = 8)
+#plot(df[, c(1,2)], as=1, col = df[, 3])
+plot(X, as = 1, col = 8)
 sm.density(clust1.data[, c(1,2)], h = a.ml*c(1,1), display="slice",props=c(75),col=2,add=TRUE)
 sm.density(clust2.data[, c(1,2)], h = a.ml*c(1,1), display="slice",props=c(75),col="green", add=TRUE)
 sm.density(clust3.data[, c(1,2)], h = a.ml*c(1,1), display="slice",props=c(75),col="blue", add=TRUE)
@@ -144,15 +155,102 @@ sm.density(clust3.data[, c(1,2)], h = a.ml*c(1,1), display="slice",props=c(75),c
 
 ## 4. Repeat 2 and 3, with Automatically Selected Optimal Number of Clusters
 
-```{r}
-# Dette kan fjernes. 
-# Which of the following values should we trust?
-h1 <- h.select(X, method = "cv")
-h2 <- hcv(X, method = "cv")
+### Gap Statistic
 
-# Density estimation using the value of a found above. 
-plot(X,as=1, col = 8)
-sm.density(X, h = h1[[1]]*c(1,1), display="slice",props=c(25,50,75,95),col=2,add=TRUE)
+```{r, results = "hide"}
+# Create a function doing hclust and cutree.
+hclusCut <- function(x, k, d.meth = "euclidean", ...){
+   list(cluster = cutree(hclust(dist(x, method=d.meth), ...), k=k))
+}
+
+K.max <- 10
+Gap <- clusGap(X, FUNcluster=hclusCut, K.max=K.max, B = 500, method="ward.D")
+plot(1:K.max,Gap$Tab[,"gap"],type="b", xlab = "Number of Clusters", ylab = "Gap Statistic", main = "Gap Statistic")
+points(1:K.max,Gap$Tab[,"gap"]+ Gap$Tab[,"SE.sim"],pch="+", col=2)
+points(1:K.max,Gap$Tab[,"gap"]- Gap$Tab[,"SE.sim"],pch="+",col=2)
 ```
 
-The optimal bandwidth is selected separately for each cluster. 
+The gap statistic suggests using $k = 1$ (or $k = 3$) cluster(s). 
+
+### Calinski and Harabasz index (CH-index)
+
+```{r}
+n.cl <- 2:10
+l.n.cl<-length(n.cl)
+
+avg.sil <- rep(NA, l.n.cl)
+w <- rep(NA, l.n.cl)
+wb.rat <- rep(NA, l.n.cl)
+sep.ind <- rep(NA, l.n.cl)
+CalHar <- rep(NA, l.n.cl)
+ 
+for (i in (1:l.n.cl)){
+  k<-n.cl[i]
+  d <- dist(X)
+  hcl.Eucl <- hclust(d, method="ward.D")
+  cut.hcl.Eucl <- cutree(hcl.Eucl,k)
+  cl.stats <- cluster.stats(d,cut.hcl.Eucl)
+  avg.sil[i]   <- cl.stats$avg.silwidth
+  w[i]    <- cl.stats$average.within
+  wb.rat[i]    <- cl.stats$wb.ratio
+  sep.ind[i]   <- cl.stats$sindex
+  CalHar[i]   <- cl.stats$ch
+}
+op<-par(mfrow=c(2,2))
+plot(n.cl,avg.sil)
+plot(n.cl,wb.rat)
+#plot(n.cl,w)
+plot(n.cl,CalHar)
+plot(n.cl,sep.ind)
+```
+
+The lower left plot shows the CH-index, which has the values 
+
+```{r}
+rbind("Clusters" = n.cl, "CH" = CalHar)
+```
+
+It suggests using $k = 8$ clusters, since this is the maximum among the values of the index. This does however seem like a lot of clusters in this case. Thus, based on the values above, once could perhaps also choose $k = 4$ or $k = 6$, since the CH-index for these values are almost as large as for $k = 8$.
+
+Based on the two methods used, we will choose $k = 4$ clusters as the optimal amount. 
+
+### Hierarchical Clustering; Cutting Dendrogram at $k = 4$
+
+The dendrogram is cut into $k = 4$ clusters. The scatterplot below shows how the points are distributed in the four clusters.
+
+```{r}
+cluster.number <- 8
+clusts2 <- cutree(hcl1, cluster.number)
+table(clusts2)
+df2 <- data.frame(lstat = X[,1], rm = X[,2], cluster = factor(clusts2))
+ggplot(df2, aes(x = lstat, y = rm)) + 
+   geom_point(aes(colour = cluster)) +
+   theme_minimal()
+```
+
+### Select Optimal Bandwidth and Estimate Densities in Each Cluster
+
+The 75\% level curves of all four estimated densities are plotted below. 
+
+```{r}
+a.mls <- rep(NA, cluster.number)
+plot(X, as = 1, col = 8)
+
+for (i in 1:cluster.number){
+   clust.data2 <- df2 %>% dplyr::filter(cluster == i)
+   a.mli <- optimal.bandwidth(data.matrix(clust.data2 %>% select(c("lstat", "rm"))), a.domain)
+   a.mls[i] <- a.mli
+   # The lines below are just to avoid the gray color of the points. 
+   colo <- i
+   if (colo == 8){
+      colo <- 'mediumorchid2'
+   }
+   sm.density(clust.data2[, c(1,2)], h = a.mli*c(1,1), display="slice",props=c(75),col=colo,add=TRUE)
+}
+```
+
+Note that the optimal bandwidth is selected separately for each cluster in order to improve the final density estimations. The optimal bandwidth in each cluster (based on the same grid of a-values from point 1) is
+
+```{r}
+rbind("Clusters" = 1:cluster.number, "Opt. Bandwidth" = a.mls)
+```
