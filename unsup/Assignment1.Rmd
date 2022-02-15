@@ -13,7 +13,10 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, comment = "#>")
+library(sm)
+library(ggplot2)
+library(dplyr)
 ```
 
 # Load Boston Housing Data
@@ -28,80 +31,17 @@ plot(X,as=1)
 
 ## 1. Estimate Joint Bivariate Density
 
-We want to estimate the joint bivariate density using a kernel estimator with the same bandwidth in both dimensions: $h = (a, a)$. 
+We want to estimate the joint bivariate density using a kernel estimator with the same bandwidth in both dimensions: $h = (a, a)$. The maximum log-likelihood cross-validation method will be used to choose the value of $a$. Then, the density will be estimated using this value of $a$. Some level curves of this estimated density are plotted below. 
 
 ```{r}
-library(sm)
-plot(X,as=1,col=8)
-
-# Select h. Not sure how we should use the hint. 
-# Which of the following values should we trust?
-# Looks like we should find this maximum manually, but how?
-h1 <- h.select(X, method = "cv")
-h2 <- hcv(X, method = "cv")
-
-# Density estimation using the value of a found above. 
-sm.density(X, h = h1[[1]]*c(1,1), display="slice",props=c(25,50,75,95),col=2,add=TRUE)
-sm.density(X, h = 0.1*c(1,1), display="slice",props=c(25,50,75,95),col=2,add=TRUE)
-```
-
-The maximum log-likelihood cross-validation method will be used to choose the value of $a$. Then, the density will be estimated using the value of $a$.
-
-```{r}
-# Try to estimate "manually" to check if we get similar value to above. 
-# Does not give sensible results. How should we maximize this manually? :))
-
-lstat.min <- min(X[,1])
-lstat.max <- max(X[,1])
-rm.min <- min(X[,2])
-rm.max <- max(X[,2])
-grid.values <- 15
-lst <- seq(from = lstat.min, to = lstat.max, length.out = grid.values)
-rme <- seq(from = rm.min, to = rm.max, length.out = grid.values)
-maxes <- c() # Slow, but alright for testing I guess. 
-objectives <- c() # Slow, but alright for testing I guess.
-for (i in 1:grid.values){
-   for (j in 1:grid.values){
-      new.point <- matrix(c(lst[i], rme[j]), ncol = 2)
-      f <- function(x){
-         f.hat <- sm.density(X,h=x*c(1,1),display="none",eval.grid=FALSE, eval.points = new.point)
-         log(f.hat$estimate)
-      }
-      maxes <- c(maxes, optimize(f, interval = c(0.1, 1), maximum = T)$maximum)
-      objectives <- c(objectives, optimize(f, interval = c(0.1, 1), maximum = T)$objective)
-   }
-}
-
-m.id <- which.max(objectives)
-maxes[m.id]
-
-# The 1d-optimization in optimize depends on at which point the sm is evaluated. Want to try to maximize over the
-# entire grid + maximize on the given range of discrete a-values. 
-```
-
-This was how I interpreted the task.
-```{r}
-data("Boston", package = "MASS")
-X <- scale(Boston[, c(13,6)])
-plot(X, as = 1)
-
-# Question 1
-library(sm)
-plot(X, as = 1, col = 8)
-sm.density(X, h = .5*c(1,1), display = "slice",
-           props = c(25,50,75,95), col = 2, add = T)
-
 # Valid choice of a
 a.domain <- seq(0.1, 1, by = 0.1)
-a.domain
 
 # Number of data points
 n <- dim(X)[1]
-n
 
 # Create storage for the sample log-likelihoods
 f.hat.cv <- matrix(0, nrow = length(a.domain))
-f.hat.cv
 
 # Iterate through a values
 for (i in 1:length(a.domain)) {
@@ -117,10 +57,9 @@ for (i in 1:length(a.domain)) {
     f.hat.cv[i] <- f.hat.cv[i] + log(f.hat.j)
   }
 }
-f.hat.cv
 
+# Maximum likelihood cross-validation value of a
 a.ml <- a.domain[which.max(f.hat.cv)]
-a.ml  # Maximum likelihood cross-validation value of a
 
 # Plotting the density estimation with our chosen a value
 plot(X, as = 1, col = 8)
@@ -128,21 +67,31 @@ sm.density(X, h = a.ml*c(1,1), display = "slice",
            props = c(25,50,75,95), col = 2, add = T)
 ```
 
+The optimal value on the discrete grid of $a$'s 
+
+```{r}
+a.domain
+```
+
+is `r a.ml`. 
 
 ## 2. Hierarchical Clustering
 
+Hierarchical clustering using the **ward.D** method. The dendrogram is shown below. 
+
 ```{r}
-library(ggplot2)
-library(dplyr)
-hcl1 <- hclust(dist(X), method="ward.D")
+hcl1 <- hclust(dist(X), method="ward.D") # Euclidean distance, ward.D method. 
 plot(hcl1)
+```
+
+The dendrogram is cut into $k = 3$ clusters. The scatterplot below shows how the points are distributed in the three clusters. 
+
+```{r}
 clusts <- cutree(hcl1, 3)
-
-df <- data.frame(lstat = X[,1], rm = X[,2], col = factor(clusts))
-ggplot(df, aes(x = rm, y = lstat)) + 
-   geom_point(aes(colour = col)) +
+df <- data.frame(lstat = X[,1], rm = X[,2], cluster = factor(clusts))
+ggplot(df, aes(x = lstat, y = rm)) + 
+   geom_point(aes(colour = cluster)) +
    theme_minimal()
-
 ```
 
 
@@ -152,33 +101,58 @@ ggplot(df, aes(x = rm, y = lstat)) +
 
 ```{r}
 # Data from cluster 1.
-clust1.data <- df %>% dplyr::filter(col == "1")
+clust1.data <- df %>% dplyr::filter(cluster == "1")
 
 # Non-parametric estimation of the joint density. 
 plot(clust1.data[, c(1,2)])
-sm.density(clust1.data[, c(1,2)], h = h1[[1]]*c(1,1), display="slice",props=c(75),col=2,add=TRUE)
+sm.density(clust1.data[, c(1,2)], h = a.ml*c(1,1), display="slice",props=c(75),col=2,add=TRUE)
 ```
 
 ### Cluster 2
 
 ```{r}
 # Data from cluster 1.
-clust2.data <- df %>% dplyr::filter(col == "2")
+clust2.data <- df %>% dplyr::filter(cluster == "2")
 
 # Non-parametric estimation of the joint density. 
 plot(clust2.data[, c(1,2)])
-sm.density(clust2.data[, c(1,2)], h = h1[[1]]*c(1,1), display="slice",props=c(75),col=2,add=TRUE)
+sm.density(clust2.data[, c(1,2)], h = a.ml*c(1,1), display="slice",props=c(75),col="green",add=TRUE)
 ```
 
 ### Cluster 3
 
 ```{r}
 # Data from cluster 1.
-clust3.data <- df %>% dplyr::filter(col == "3")
+clust3.data <- df %>% dplyr::filter(cluster == "3")
 
 # Non-parametric estimation of the joint density. 
 plot(clust3.data[, c(1,2)])
-sm.density(clust3.data[, c(1,2)], h = h1[[1]]*c(1,1), display="slice",props=c(75),col=2,add=TRUE)
+sm.density(clust3.data[, c(1,2)], h = a.ml*c(1,1), display="slice",props=c(75),col="blue",add=TRUE)
 ```
 
+### Combined Plot
+
+The 75\% level curves of all three estimated densities are plotted below. 
+
+```{r}
+plot(X, as=1, col = 8)
+sm.density(clust1.data[, c(1,2)], h = a.ml*c(1,1), display="slice",props=c(75),col=2,add=TRUE)
+sm.density(clust2.data[, c(1,2)], h = a.ml*c(1,1), display="slice",props=c(75),col="green", add=TRUE)
+sm.density(clust3.data[, c(1,2)], h = a.ml*c(1,1), display="slice",props=c(75),col="blue", add=TRUE)
+```
+
+
 ## 4. Repeat 2 and 3, with Automatically Selected Optimal Number of Clusters
+
+```{r}
+# Dette kan fjernes. 
+# Which of the following values should we trust?
+h1 <- h.select(X, method = "cv")
+h2 <- hcv(X, method = "cv")
+
+# Density estimation using the value of a found above. 
+plot(X,as=1, col = 8)
+sm.density(X, h = h1[[1]]*c(1,1), display="slice",props=c(25,50,75,95),col=2,add=TRUE)
+```
+
+The optimal bandwidth is selected separately for each cluster. 
