@@ -170,6 +170,9 @@ points(1:K.max,Gap$Tab[,"gap"]+ Gap$Tab[,"SE.sim"],pch="+", col=2)
 points(1:K.max,Gap$Tab[,"gap"]- Gap$Tab[,"SE.sim"],pch="+",col=2)
 ```
 
+Using the gap statistic as a model choice criterion we choose the first 
+$k$ such that the gap statistic is larger or equal to the next $(k+1)$ 
+statistic subtracted its standard deviation.
 The gap statistic suggests using $k = 1$ (or $k = 3$) cluster(s). 
 
 ### Calinski and Harabasz index (CH-index)
@@ -210,7 +213,8 @@ The lower left plot shows the CH-index, which has the values
 rbind("Clusters" = n.cl, "CH" = CalHar)
 ```
 
-It suggests using $k = 8$ clusters, since this is the maximum among the values of the index. This does however seem like a lot of clusters in this case. Thus, based on the values above, once could perhaps also choose $k = 4$ or $k = 6$, since the CH-index for these values are almost as large as for $k = 8$.
+It suggests using $k = 9$ clusters, since this is the maximum among the values of the index. This does however seem like a lot of clusters in this case. Thus, based on the values above, one could perhaps also choose $k = 4$ or $k = 7$, since the CH-index for these values are almost as large as for $k = 9$.
+We also keep in mind that a simpler model is easier to interpret and thus preferred when other model choice criteria is similar.
 
 Based on the two methods used, we will choose $k = 4$ clusters as the optimal amount. 
 
@@ -219,7 +223,7 @@ Based on the two methods used, we will choose $k = 4$ clusters as the optimal am
 The dendrogram is cut into $k = 4$ clusters. The scatterplot below shows how the points are distributed in the four clusters.
 
 ```{r}
-cluster.number <- 8
+cluster.number <- 4
 clusts2 <- cutree(hcl1, cluster.number)
 table(clusts2)
 df2 <- data.frame(lstat = X[,1], rm = X[,2], cluster = factor(clusts2))
