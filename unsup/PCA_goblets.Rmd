@@ -1,0 +1,170 @@
+---
+title: 'PCA: Example of Goblets data set'
+author: "Pedro Delicado"
+date: "`r format(Sys.time(), '%d/%b/%Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("/home/ajo/gitRepos/ML/unsup")
+```
+
+## Goblets data set: 
+Archaeological goblets from Thailand (Manly, 1989).
+
+6 measurements on 25 archaeological goblets (in cm):
+
+* Rim width 
+* Bowl width 
+* Bowl height
+* Base width
+* Stem width
+* Stem heigth
+
+![](https://www.duckhorn.com/assets/client/Image/blog/wine-glass-illustration2.jpg)
+
+```{r}
+X <- read.csv2("goblets.dat")
+names(X) # "Rim.width", "Bowl.width", "Bowl.height", 
+         # "Base.width", "Stem.width", "Stem.height"
+```
+
+## This function draw a goblet:
+
+```{r, echo=TRUE}
+plot.goblet <- function(c1=0,c2=0,scale=1,a1=1,a2=1,b1=1,b2=1,b3=1,b4=1,add=TRUE,...){
+  x<-c1 + scale*c(-b1/2, -b2/2, -b4/2, b4/2, b3/2, b4/2, -b4/2, -b3/2, -b4/2, b2/2, b1/2, -b1/2) 
+  y<-c2 + scale*c(-a1,0,0,0,a2/3,a2,a2,a2/3,0,0,-a1,-a1)
+  if (!add){
+    plot(x,y,type="n",...)
+  }
+  polygon(x, y, xpd = NA, col = "orange", lty = 1, lwd = 2, border = "red")
+}
+```
+
+Drawing the average goblet 
+
+```{r, echo=TRUE}
+m <- apply(X,2,mean)
+plot.goblet(scale=1,c1=0,c2=0, add=FALSE,
+            b1=m[4],b2=m[5],b3=m[2],b4=m[1],
+            a1=m[6],a2=m[3],
+            asp=1)
+title(main="The average goblet")
+```
+
+Computing the PCA using `princomp`, based on `eigen` (eigendecomposition of S)
+
+```{r}
+out <- princomp(X)
+summary(out)
+```
+
+```{r}
+biplot(out)
+```
+
+```{r}
+plot(out$scores[,1:2],type="n",
+     xlab=paste("Pr. Comp. 1 (",round(100*out$sdev[1]^2/(sum(out$sdev^2)),2),"%)",sep=""),
+     ylab=paste("Pr. Comp. 2 (",round(100*out$sdev[2]^2/(sum(out$sdev^2)),2),"%)",sep=""))
+abline(v=0,h=0,col=8)
+n<-dim(X)[1]
+for (i in 1:n){
+  plot.goblet(scale=.05,c1=out$scores[i,1],c2=out$scores[i,2],
+              b1=X[i,4],b2=X[i,5],b3=X[i,2],b4=X[i,1],
+              a1=X[i,6],a2=X[i,3])
+}
+```
+
+Computing the PCA using `prcomp`, based on `svd` (singular value decomposition)
+
+```{r}
+out2 <- prcomp(X)
+summary(out2)
+biplot(out2)
+
+plot(out2$x[,1:2],type="n",
+     xlab=paste("Pr. Comp. 1 (",round(100*out2$sdev[1]^2/(sum(out2$sdev^2)),2),"%)",sep=""),
+     ylab=paste("Pr. Comp. 2 (",round(100*out2$sdev[2]^2/(sum(out2$sdev^2)),2),"%)",sep=""))
+
+abline(v=0,h=0,col=8)
+n<-dim(X)[1]
+for (i in 1:n){
+  plot.goblet(scale=.05,c1=out2$x[i,1],c2=out2$x[i,2],
+              b1=X[i,4],b2=X[i,5],b3=X[i,2],b4=X[i,1],
+              a1=X[i,6],a2=X[i,3])
+}
+```
+
+## Doing PCA by ourselves
+
+```{r}
+S <- cov(X)
+eigS <- eigen(S)
+names(eigS)
+```
+
+```{r}
+plot(eigS$values,type="b")
+text(1:length(eigS$values),eigS$values,
+     round(100*eigS$values/sum(eigS$values),2),pos=4)
+```
+
+Coordinates of 1st and 2nd of the original variables:
+
+```{r}
+plot(eigS$vectors[,1:2],pch=20)
+text(eigS$vectors[,1],eigS$vectors[,2],names(X))
+```
+
+Or even better:
+
+```{r}
+plot(eigS$vectors[,1:2]%*%diag(c(-1,1)),
+     pch=20,xlim=c(0,.8))
+abline(h=0,v=0,col=8)
+for (i in 1:dim(X)[2]){
+  lines(c(0,-eigS$vectors[i,1]),c(0,eigS$vectors[i,2]))
+}
+text(-eigS$vectors[,1],eigS$vectors[,2],names(X),pos=4)
+```
+
+Plane of the 1st and 2nd PCs
+
+```{r}
+PCscores <- scale(X,scale = FALSE) %*% eigS$vectors
+plot(PCscores[,1:2]%*%diag(c(-1,1)))
+text(-PCscores[,1],PCscores[,2],1:dim(X)[1],pos=4)
+```
+
+```{r}
+plot(PCscores[,1:2]%*%diag(c(-1,1)),type="n",
+     xlab=paste("Pr. Comp. 1 (",round(100*eigS$values[1]/(sum(eigS$values)),2),"%)",sep=""),
+     ylab=paste("Pr. Comp. 2 (",round(100*eigS$values[2]/(sum(eigS$values)),2),"%)",sep=""))
+
+abline(v=0,h=0,col=8)
+n<-dim(X)[1]
+for (i in 1:n){
+  plot.goblet(scale=.05,c1=-PCscores[i,1],c2=PCscores[i,2],
+              b1=X[i,4],b2=X[i,5],b3=X[i,2],b4=X[i,1],
+              a1=X[i,6],a2=X[i,3])
+}
+```
+ 
+# Other R functions that compute PCA
+
+```{r}
+# install.packages("FactoMineR")
+library("FactoMineR")
+res.pca = PCA(X, scale.unit=TRUE, ncp=5, graph=T)
+```
+
+```{r}
+# install.packages("ade4")
+library("ade4")
+pca1 <- dudi.pca(X,scannf=FALSE,nf=3)
+scatter(pca1)
+```
+

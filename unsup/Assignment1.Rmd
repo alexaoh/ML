@@ -214,9 +214,9 @@ rbind("Clusters" = n.cl, "CH" = CalHar)
 ```
 
 It suggests using $k = 9$ clusters, since this is the maximum among the values of the index. This does however seem like a lot of clusters in this case. Thus, based on the values above, one could perhaps also choose $k = 4$ or $k = 7$, since the CH-index for these values are almost as large as for $k = 9$.
-We also keep in mind that a simpler model is easier to interpret and thus preferred when other model choice criteria is similar.
+We also keep in mind that a simpler model is easier to interpret (as well as the principle of parsimony) and thus preferred when other model choice criteria are similar 
 
-Based on the two methods used, we will choose $k = 4$ clusters as the optimal amount. 
+Based on the two methods used, we will choose $k = 4$ clusters as the optimal amount. Note that the gap statistic at $k = 4$ is larger than the gap statistic at $k = 5$ subtracted its standard deviation. Thus, we argue that $k = 4$ is a fair choice based on the gap statistic as well, despite the fact that it is not the smallest $k$ such that the model choice criterion holds. 
 
 ### Hierarchical Clustering; Cutting Dendrogram at $k = 4$
 
