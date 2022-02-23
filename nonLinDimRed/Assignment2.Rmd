@@ -20,6 +20,7 @@ library(ggplot2)
 library(dplyr)
 library(cluster)
 library(fpc)
+library(princurve)
 ```
 
 # PCA and Principal Curves for ZIP numbers
@@ -36,7 +37,7 @@ dim(zip.zeros)
 
 ## Questions
 
-### Hierarchichal Clustering
+### Hierarchical Clustering
 
 Hierarchical clustering using the **ward.D** method. The dendrogram is plotted below and it is cut into $k = 4$ clusters. 
 
@@ -77,20 +78,123 @@ for (i in 1:4){
    }
    average.images[i,257] <- i
 }
-head(average.images)
+
 op <- par(mfrow=c(2,2))
-apply(average.images,1,plot.zip)
+apply(average.images[,-ncol(average.images)],1, plot.zip, use.first = T)
 par(op)
-# Noe litt rart her, se mer seinere!!
+
+# Snittbildene virker sannsynlige basert på plottene nedenfor for hver cluster!
+# Dette kan fjernes til slutt, var bare for å "sjekke" om snittene over gir mening. 
+par(mfrow=c(3,4))
+dat <- zip.zeros %>% dplyr::filter(cluster == 4)
+apply(dat[sample(1:nrow(dat), 12), -c(1,ncol(dat))],1,plot.zip, use.first = T)
 ```
 
 ### Principal Components
 
-```{r}
+The principal components for this dataset are calculated. The scatterplot of the scores in the two first components are plotted, using different colors for points in different clusters. 
 
+```{r}
+zip.PC <- princomp(zip.zeros[,-c(1,ncol(zip.zeros))])
+#summary(zip.PC)
+df <- data.frame(Comp1 = zip.PC$scores[,1], Comp2 = zip.PC$scores[,2], cluster = factor(zip.zeros$cluster))
+df %>% ggplot(aes(x = Comp1, y = Comp2)) + 
+   geom_point(aes(color = cluster)) +
+   theme_minimal()
 ```
 
+### For each of the $k = 4$ Clusters, do ...
 
+#### Consider the bivariate data set of the scores PC1 and PC2 of the points in the cluster
+
+```{r}
+df.clust1 <- df %>% dplyr::filter(cluster == 1)
+df.clust2 <- df %>% dplyr::filter(cluster == 2)
+df.clust3 <- df %>% dplyr::filter(cluster == 3)
+df.clust4 <- df %>% dplyr::filter(cluster == 4)
+```
+
+#### Estimate non-parametrically the joint density of (PC1, PC2) conditional to the cluster, using the default bandwidth values. Represent the estimated bivariate density via the 75% level curve
+
+```{r}
+plot(zip.PC$scores[,1:2],pch=19,cex=.5,col=zip.zeros[,ncol(zip.zeros)]+1)
+sm.density(df.clust1[, c(1,2)], display="slice",props=c(75), add = T)
+sm.density(df.clust2[, c(1,2)], display="slice",props=c(75), add = T)
+sm.density(df.clust3[, c(1,2)], display="slice",props=c(75), add = T)
+sm.density(df.clust4[, c(1,2)], display="slice",props=c(75), add = T)
+```
+
+### Principal Curve
+
+The principal curve obtained from the 256-dimensional set of zeros will be represented in the previous plot, using the package **princurve**. The principal curve is plotted as a dotted line below. 
+
+```{r}
+plot(zip.PC$scores[,1:2],pch=19,cex=.5,col=zip.zeros[,ncol(zip.zeros)]+1)
+sm.density(df.clust1[, c(1,2)], display="slice",props=c(75), add = T)
+sm.density(df.clust2[, c(1,2)], display="slice",props=c(75), add = T)
+sm.density(df.clust3[, c(1,2)], display="slice",props=c(75), add = T)
+sm.density(df.clust4[, c(1,2)], display="slice",props=c(75), add = T)
+princ.curve <- principal_curve(zip.PC$scores[,1:2])
+lines(princ.curve, col = 1, lty = 2, lwd = 2) # Vet ikke om dette er korrekt, bare prøvde. 
+```
+
+### For each of the $k = 4$ Clusters, do ...
+
+#### Consider the univariate data set of the 'lambda' scores over the principal curve of the points in this cluster.
+
+```{r}
+# Make a new data set with lambda and clusters. 
+df2 <- data.frame(lambda = princ.curve$lambda, cluster = factor(zip.zeros$cluster))
+
+# Make new data frames (from the above) for each cluster. 
+df2.clust1 <- df2 %>% dplyr::filter(cluster == 1)
+df2.clust2 <- df2 %>% dplyr::filter(cluster == 2)
+df2.clust3 <- df2 %>% dplyr::filter(cluster == 3)
+df2.clust4 <- df2 %>% dplyr::filter(cluster == 4)
+```
+
+#### Estimate non-parametrically the density function of lambda, conditional to this cluster. Use the default bandwith value. Plot the estimated density function.
+
+```{r}
+plot(zip.PC$scores[,1:2],pch=19,cex=.5,col=zip.zeros[,ncol(zip.zeros)]+1)
+princ.curve <- principal_curve(zip.PC$scores[,1:2])
+lines(princ.curve, col = 1, lty = 2, lwd = 2) # Vet ikke om dette er korrekt, bare prøvde. 
+# Her er det nok noe galt ja! ;))
+sm.density(df2.clust1[, 1], add = T)
+sm.density(df2.clust2[, 1], add = T)
+sm.density(df2.clust3[, 1], add = T)
+sm.density(df2.clust4[, 1], add = T)
+```
+
+ 
 # Choosing the smoothing parameter in Principal Curves (Hastie and Stuetzle 1989)
 
+Consider the 3-dimensional data generated from the following code. 
+
+```{r}
+t <- seq(-1.5*pi,1.5*pi,l=100)
+R<- 1
+n<-75
+sd.eps <- .15
+set.seed(1)
+
+y <-  R*sign(t) - R*sign(t)*cos(t/R)
+x <- -R*sin(t/R)
+z <- (y/(2*R))^2
+rt <- sort(runif(n)*3*pi - 1.5*pi)
+eps <- rnorm(n)*sd.eps
+ry <- R*sign(rt) - (R+eps)*sign(rt)*cos(rt/R)
+rx <- -(R+eps)*sin(rt/R)
+rz <- (ry/(2*R))^2 + runif(n,min=-2*sd.eps,max=2*sd.eps)
+XYZ <- cbind(rx,ry,rz)
+require(plot3D)
+lines3D(x,y,z,colvar = NULL,
+phi = 20, theta = 60, r =sqrt(3), d =3, scale=FALSE,
+col=2,lwd=4,as=1,
+xlim=range(rx),ylim=range(ry),zlim=range(rz))
+points3D(rx,ry,rz,col=4,pch=19,cex=.6,add=TRUE)
+```
+
 ## Questions
+
+### Choose the Value of the Degrees of Freedom by Leave-One-Out Cross-Validation (LOOCV)
