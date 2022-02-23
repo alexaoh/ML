@@ -1,0 +1,96 @@
+---
+title: "Assignment 2"
+subtitle: "PCA and Principal Curves"
+author: "Alexander, Ulrik, Hannes"
+date: "`r format(Sys.time(), '%d/%b/%Y')`"
+output: 
+   html_document:
+    code_folding: hide
+    theme: cerulean
+    highlight: textmate
+    number_sections: true
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = "#>")
+setwd("/home/ajo/gitRepos/ML/nonLinDimRed")
+library(sm)
+library(ggplot2)
+library(dplyr)
+library(cluster)
+library(fpc)
+```
+
+# PCA and Principal Curves for ZIP numbers
+
+Consider the ZIP data set. Read the train data set and select only the zeros. 
+
+```{r}
+zip.train <- read.table("../unsup/zip.train")
+dim(zip.train)
+table(zip.train[,"V1"])
+zip.zeros <- zip.train %>% dplyr::filter(V1 == 0)
+dim(zip.zeros)
+```
+
+## Questions
+
+### Hierarchichal Clustering
+
+Hierarchical clustering using the **ward.D** method. The dendrogram is plotted below and it is cut into $k = 4$ clusters. 
+
+```{r}
+hcl1 <- hclust(dist(zip.zeros), method="ward.D") # Euclidean distance, ward.D method. 
+plot(hcl1)
+clusts <- cutree(hcl1, 4)
+table(clusts)
+zip.zeros$cluster <- clusts # Add the cluster of each point to a new column. 
+```
+
+The table above shows how the zeros are distributed across the clusters. 
+
+### Average Digit at Each Cluster
+
+The average digit in each cluster is plotted. 
+
+```{r}
+# Function for plotting a digit. Taken from "PCA_ZIP_numbers.Rmd" (lectures).
+plot.zip <- function(x,use.first=FALSE){
+  x<-as.numeric(x)
+  if (use.first){
+    x.mat <- matrix(x,16,16)
+  }else{
+    x.mat <- matrix(x[-1],16,16)
+  }
+  image(1:16,1:16,x.mat[,16:1],
+        col=gray(seq(1,0,l=12)))
+  if (!use.first) title(x[1])
+}
+
+# Calculate the average digit in each cluster.
+# This could be solved more efficiently. 
+average.images <- zip.zeros[1:4,-1]
+for (i in 1:4){
+   for (j in 1:256){
+      average.images[i,j] <- mean((zip.zeros %>% dplyr::filter(cluster == i))[,j+1])
+   }
+   average.images[i,257] <- i
+}
+head(average.images)
+op <- par(mfrow=c(2,2))
+apply(average.images,1,plot.zip)
+par(op)
+# Noe litt rart her, se mer seinere!!
+```
+
+### Principal Components
+
+```{r}
+
+```
+
+
+# Choosing the smoothing parameter in Principal Curves (Hastie and Stuetzle 1989)
+
+## Questions
