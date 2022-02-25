@@ -14,7 +14,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, comment = "#>")
-setwd("/home/ajo/gitRepos/ML/nonLinDimRed")
+# setwd("/home/ajo/gitRepos/ML/nonLinDimRed")
 library(sm)
 library(ggplot2)
 library(dplyr)
@@ -134,8 +134,13 @@ sm.density(df.clust1[, c(1,2)], display="slice",props=c(75), add = T)
 sm.density(df.clust2[, c(1,2)], display="slice",props=c(75), add = T)
 sm.density(df.clust3[, c(1,2)], display="slice",props=c(75), add = T)
 sm.density(df.clust4[, c(1,2)], display="slice",props=c(75), add = T)
-princ.curve <- principal_curve(zip.PC$scores[,1:2])
-lines(princ.curve, col = 1, lty = 2, lwd = 2) # Vet ikke om dette er korrekt, bare prøvde. 
+# princ.curve <- principal_curve(zip.PC$scores[,1:2])
+princ.curve <- principal_curve(as.matrix(zip.zeros[,-c(1,ncol(zip.zeros))]))
+# Projecting the principal curve over the Principal Components
+proj.prcv.to.PC <- predict(zip.PC,princ.curve$s)
+# lines(princ.curve, col = 1, lty = 2, lwd = 2) # Vet ikke om dette er korrekt, bare prøvde. 
+# Dette stemmer bedre med eksempler fra forelesning
+lines(proj.prcv.to.PC[princ.curve$ord,1:2],col=1, lty = 2, lwd=2)
 ```
 
 ### For each of the $k = 4$ Clusters, do ...
