@@ -214,3 +214,7 @@ points3D(rx,ry,rz,col=4,pch=19,cex=.6,add=TRUE)
 ## Questions
 
 ### Choose the Value of the Degrees of Freedom by Leave-One-Out Cross-Validation (LOOCV)
+
+### Give a graphical representation of the principal curve output for the optimal df and comment on the obtained results.
+
+### Compute the leave-one-out cross-validation for df=50 and compare it with the result corresponding to the optimal df value you found before.
