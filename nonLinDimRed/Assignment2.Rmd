@@ -215,6 +215,63 @@ points3D(rx,ry,rz,col=4,pch=19,cex=.6,add=TRUE)
 
 ### Choose the Value of the Degrees of Freedom by Leave-One-Out Cross-Validation (LOOCV)
 
+```{r}
+dfValues <- seq(2,8,by=1)
+#errVect <- matrix(0, nrow=1, ncol=7)
+
+for (dfValue in dfValues){
+  
+i=dfValue
+print(i) # just for testing, working on syntax
+
+err <- 0
+
+for (p in (1:dim(XYZ)[1])){
+  
+  train_set <- XYZ[-p,] 
+  
+  #test_set <- XYZ[p,]
+  test_set <- t(as.matrix(XYZ[p,]))
+  
+  prin <- principal_curve(train_set, df = i)
+  
+  proj <- project_to_curve(test_set,prin$s)
+  
+  err <- err + proj$dist
+}
+
+print(err) # just for testing, working on syntax 
+
+}
+
+
+```
+
 ### Give a graphical representation of the principal curve output for the optimal df and comment on the obtained results.
 
 ### Compute the leave-one-out cross-validation for df=50 and compare it with the result corresponding to the optimal df value you found before.
+
+```{r}
+
+i=50
+print(i) # just for testing, working on syntax
+
+err <- 0
+
+for (p in (1:dim(XYZ)[1])){
+  
+  train_set <- XYZ[-p,] 
+  
+  #test_set <- XYZ[p,]
+  test_set <- t(as.matrix(XYZ[p,]))
+  
+  prin <- principal_curve(train_set, df = i)
+  
+  proj <- project_to_curve(test_set,prin$s)
+  
+  err <- err + proj$dist
+}
+
+print(err) # just for testing, working on syntax
+
+```
