@@ -160,16 +160,22 @@ legend(x = "bottomright", legend = c("1","2","3","4"), title = "Cluster",
        col=c(2,3,4,5), pch = 20, cex = 0.7)
 
 op <- par(mfrow=c(2,2))
-sm.density(df2.clust1[, 1], add = F)
-sm.density(df2.clust2[, 1], add = F)
-sm.density(df2.clust3[, 1], add = F)
-sm.density(df2.clust4[, 1], add = F)
+sm.density(df2.clust1[, 1], add = F, col = "2")
+sm.density(df2.clust2[, 1], add = F, col = "3")
+sm.density(df2.clust3[, 1], add = F, col = "4")
+sm.density(df2.clust4[, 1], add = F, col = "5")
+
+par(mfrow=c(1,1))
+sm.density.compare(x = df2$lambda, group = df2$cluster, col = c(2,3,4,5),
+                   lty=c(1,1,1,1))
+legend(x = "right", legend = c("1","2","3","4"), title = "Cluster",
+       col=c(2,3,4,5), pch = 20, cex = 0.7)
 ```
 
-Above the non-parametric density estimation of lambda in each cluster is plotted by itself.
+Above the non-parametric density estimation of lambda in each cluster is plotted by itself, and then together using the **sm.density.compare()** function.
 In the problem description it sounds like this should be plotted over the principal component plot above, but we do not understand how this could be done.
 
-The density plots shows that in cluster one lambdas are lowest, followed by cluster 4, cluster 2, and finally cluster 3. 
+The density plots shows that in cluster 1 lambdas are lowest, followed by cluster 4, cluster 2, and finally cluster 3. 
 This matches with previous plots of the principal curve which clearly goes through the clusters in this order.
 Looking at the average zero plot in each group, we observe that the zeros in cluster 1 and 4 are similar (wide). 
 In cluster 2 the zeros are smaller and narrower, and in cluster 3 they are the smallest. 
