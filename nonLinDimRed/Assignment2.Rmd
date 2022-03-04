@@ -244,21 +244,28 @@ for (p in (1:dim(XYZ)[1])){
 errVect[i-1] <- err
 
 }
+plot(dfValues, errVect,xlab="df", ylab="Error")
 
-plot(dfValues, errVect)
+smallestValueIndex <- which.min(errVect)
+smallestValue <- errVect[smallestValueIndex]
+correspondingDfValue <- dfValues[smallestValueIndex]
 
 ```
 
+Above the distances are plotted as a function of the df-value. From the plot we can see that the optimal value for df (of the seven tested ones) were df = 6 which corresponded to a value of 7.646.
+
 ### Give a graphical representation of the principal curve output for the optimal df and comment on the obtained results.
+
+# TODO: This.
+
 
 ### Compute the leave-one-out cross-validation for df=50 and compare it with the result corresponding to the optimal df value you found before.
 
 ```{r}
 
 i=50
-print(i) # just for testing, working on syntax
 
-err <- 0
+errDf50 <- 0
 
 for (p in (1:dim(XYZ)[1])){
   
@@ -271,9 +278,11 @@ for (p in (1:dim(XYZ)[1])){
   
   proj <- project_to_curve(test_set,prin$s)
   
-  err <- err + proj$dist
+  errDf50 <- errDf50 + proj$dist
 }
 
-print(err) # just for testing, working on syntax
+cat("The calculated error corresponding to df = 50 was ", errDf50, ".")
 
 ```
+
+# TODO: Compare to the resukt in a) and discuss.
