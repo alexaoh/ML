@@ -155,11 +155,6 @@ df2.clust4 <- df2 %>% dplyr::filter(cluster == 4)
 #### Estimate non-parametrically the density function of lambda, conditional to this cluster. Use the default bandwith value. Plot the estimated density function.
 
 ```{r}
-plot(zip.PC$scores[,1:2],pch=19,cex=.5,col=zip.zeros[,ncol(zip.zeros)]+1)
-lines(proj.prcv.to.PC[princ.curve$ord,1:2],col=1, lty = 2, lwd=2)
-legend(x = "bottomright", legend = c("1","2","3","4"), title = "Cluster",
-       col=c(2,3,4,5), pch = 20, cex = 0.7)
-
 op <- par(mfrow=c(2,2))
 sm.density(df2.clust1[, 1], add = F, col = "2")
 sm.density(df2.clust2[, 1], add = F, col = "3")
@@ -259,7 +254,7 @@ points3D(rx,ry,rz,col=4,pch=19,cex=.6,add=TRUE)
 ```
 
 The plot above shows the principal curve in black, fitted with 6 degrees of freedom chosen by the LOOCV. 
-It seems reasonably close to the generator curve in red.
+It seems reasonably close to the generator curve in red, and captures the bent "S"-shape.
 It deviates more in at the ends where there are fewer data points in the "neighborhood".
 
 
@@ -278,11 +273,11 @@ for (p in (1:dim(XYZ)[1])){
 cat("The calculated error corresponding to df = 50 was ", errDf50, ".")
 ```
 The previous error we found with df = 6 was 7.646. 
-Now, with df = 50 we get a significantly lower error 2.956.
+Now, with df = 50, we get the significantly lower error 2.956.
 Thus, the average distance from the points to the curve fitted without 
 including the points is lower, which in general is good. 
-However, fitting a curve with df = 50 from1 only 75 data points immediately sounds prone to overfitting and in general bad practice.
-Lets plot the principal curve with df = 50 to see why this can happen.
+However, fitting a curve with 50 degrees of freedom from only 75 data points immediately sounds prone to overfitting and in general bad practice.
+We plot the principal curve with df = 50 to see why this can happen.
 
 ```{r}
 fit.df.opt <- principal_curve(XYZ, df = 50)
@@ -300,5 +295,4 @@ points3D(rx,ry,rz,col=4,pch=19,cex=.6,add=TRUE)
 As expected the principal curve overfits, and is very jagged and non-smooth.
 The LOOCV error is better in this case than the preferred fit with df = 6.
 This happens because we measure the error as the distance from the point to its projection on the curve, which does not necessarily increase when we overfit.
-In the extreme case when df goes to infinity, the principal curve can "fill" the space, and every random point in the space will be infinitely  close to its projection. 
-To amend for this we could penalize the degrees of freedom in the model selection.
+In the extreme case where df goes to infinity, the principal curve can "fill" the space, and every random point in the space will be infinitely  close to its projection. 
