@@ -21,6 +21,7 @@ library(dplyr)
 library(cluster)
 library(fpc)
 library(princurve)
+library(analogue)
 ```
 
 # PCA and Principal Curves for ZIP numbers
@@ -220,69 +221,84 @@ dfValues <- seq(2,8,by=1)
 errVect <- matrix(0, nrow=1, ncol=7)
 
 for (dfValue in dfValues){
+  i = dfValue
+  err <- 0
+  for (p in (1:dim(XYZ)[1])){
   
-i=dfValue
-# print(i) # just for testing, working on syntax
-
-err <- 0
-
-for (p in (1:dim(XYZ)[1])){
+    train_set <- XYZ[-p,] 
   
-  train_set <- XYZ[-p,] 
-  
-  #test_set <- XYZ[p,]
-  test_set <- t(as.matrix(XYZ[p,]))
-  
-  prin <- principal_curve(train_set, df = i)
-  
-  proj <- project_to_curve(test_set,prin$s)
-  
-  err <- err + proj$dist
-}
-
-# print(err) # just for testing, working on syntax 
-errVect[i-1] <- err
-
+    test_set <- t(as.matrix(XYZ[p,]))
+    prin <- principal_curve(train_set, df = i)
+    proj <- project_to_curve(test_set,prin$s)
+    err <- err + proj$dist
+    }
+  errVect[i-1] <- err
 }
 plot(dfValues, errVect,xlab="df", ylab="Error")
-
-smallestValueIndex <- which.min(errVect)
-smallestValue <- errVect[smallestValueIndex]
-correspondingDfValue <- dfValues[smallestValueIndex]
-
+opt.ind <- which.min(errVect)
+objective.opt <- errVect[opt.ind]
+df.opt <- dfValues[opt.ind]
+points(dfValues[opt.ind],errVect[opt.ind], col = 2)
 ```
 
 Above the distances are plotted as a function of the df-value. From the plot we can see that the optimal value for df (of the seven tested ones) were df = 6 which corresponded to a value of 7.646.
 
 ### Give a graphical representation of the principal curve output for the optimal df and comment on the obtained results.
 
-# TODO: This.
+```{r}
+fit.df.opt <- principal_curve(XYZ, df = df.opt)
+lines3D(x,y,z,colvar = NULL,
+phi = 20, theta = 60, r =sqrt(3), d =3, scale=FALSE,
+col=2,lwd=4,as=1,
+xlim=range(rx),ylim=range(ry),zlim=range(rz))
+lines3D(fit.df.opt$s[,1],fit.df.opt$s[,2],fit.df.opt$s[,3],colvar = NULL,
+phi = 20, theta = 60, r =sqrt(3), d =3, scale=FALSE,
+col=1,lwd=4,as=1,
+xlim=range(rx),ylim=range(ry),zlim=range(rz), add = TRUE)
+points3D(rx,ry,rz,col=4,pch=19,cex=.6,add=TRUE)
+```
+
+The plot above shows the principal curve in black, fitted with 6 degrees of freedom chosen by the LOOCV. 
+It seems reasonably close to the generator curve in red.
+It deviates more in at the ends where there are fewer data points in the "neighborhood".
 
 
 ### Compute the leave-one-out cross-validation for df=50 and compare it with the result corresponding to the optimal df value you found before.
 
 ```{r}
-
 i=50
-
 errDf50 <- 0
-
 for (p in (1:dim(XYZ)[1])){
-  
   train_set <- XYZ[-p,] 
-  
-  #test_set <- XYZ[p,]
   test_set <- t(as.matrix(XYZ[p,]))
-  
   prin <- principal_curve(train_set, df = i)
-  
   proj <- project_to_curve(test_set,prin$s)
-  
   errDf50 <- errDf50 + proj$dist
 }
-
 cat("The calculated error corresponding to df = 50 was ", errDf50, ".")
+```
+The previous error we found with df = 6 was 7.646. 
+Now, with df = 50 we get a significantly lower error 2.956.
+Thus, the average distance from the points to the curve fitted without 
+including the points is lower, which in general is good. 
+However, fitting a curve with df = 50 from1 only 75 data points immediately sounds prone to overfitting and in general bad practice.
+Lets plot the principal curve with df = 50 to see why this can happen.
 
+```{r}
+fit.df.opt <- principal_curve(XYZ, df = 50)
+lines3D(x,y,z,colvar = NULL,
+phi = 20, theta = 60, r =sqrt(3), d =3, scale=FALSE,
+col=2,lwd=4,as=1,
+xlim=range(rx),ylim=range(ry),zlim=range(rz))
+lines3D(fit.df.opt$s[,1],fit.df.opt$s[,2],fit.df.opt$s[,3],colvar = NULL,
+phi = 20, theta = 60, r =sqrt(3), d =3, scale=FALSE,
+col=1,lwd=4,as=1,
+xlim=range(rx),ylim=range(ry),zlim=range(rz), add = TRUE)
+points3D(rx,ry,rz,col=4,pch=19,cex=.6,add=TRUE)
 ```
 
-# TODO: Compare to the resukt in a) and discuss.
+As expected the principal curve overfits, and is very jagged and non-smooth.
+The LOOCV error is better in this case than the preferred fit with df = 6.
+This happens because we measure the error as the distance from the point to its projection on the curve, which does not necessarily increase when we overfit.
+In the extreme case when df goes to infinity, the principal curve can "fill" the space, and every random point in the space will be infinitely  close to its projection. 
+To amend for this we could penalize the degrees of freedom in the model selection.
