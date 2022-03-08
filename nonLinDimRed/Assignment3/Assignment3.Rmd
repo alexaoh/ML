@@ -1,0 +1,273 @@
+---
+title: "Assignment 3"
+subtitle: "Local MDS, ISOMAP and t-SNE"
+author: "Alexander, Ulrik, Hannes"
+date: "`r format(Sys.time(), '%d/%b/%Y')`"
+output: 
+   html_document:
+    code_folding: hide
+    theme: cerulean
+    highlight: textmate
+    number_sections: true
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = "#>")
+# setwd("/home/ajo/gitRepos/ML/nonLinDimRed")
+library(ggplot2)
+library(dplyr)
+library(stops)
+library(plot3D)
+library(vegan)
+library(Rtsne)
+```
+
+# Local MDS for Zero Digits
+
+As in Assignment 2, we will consider only the zeros in the ZIP data set. 
+
+```{r}
+# Utility function to plot images. 
+plot.zip <- function(x,use.first=FALSE, ...){
+  x<-as.numeric(x)
+  if (use.first){
+    x.mat <- matrix(x,16,16)
+  }else{
+    x.mat <- matrix(x[-1],16,16)
+  }
+  image(1:16,1:16,x.mat[,16:1],
+        col=gray(seq(1,0,l=12)))
+  if (!use.first) title(x[1])
+}
+
+zip.train <- read.table("../unsup/zip.train")
+zip.zeros <- zip.train %>% dplyr::filter(V1 == 0) %>% dplyr::select(-1)
+dim(zip.zeros)
+delta <- dist(zip.zeros)
+```
+
+## 2-dimensional Configuration of the Data
+
+Using parameters $k = 5$ and $\tau = 0.05$ in the function `stops::lmds`, a 2-dimensional configuration of the data is found. 
+
+```{r, cache = T}
+q <- 2
+k <- 5
+tau <- 0.05
+lmbds.res <- lmds(as.matrix(delta), k = k, tau = tau, ndim = q, itmax = 700, verbose = 10)
+conf <- lmbds.res$conf
+```
+
+The scatterplot is shown below. 9 points are selected in order to try to "cover" the variability in the scatter plot. The points we have chosen are shown in red. They are chosen from left to right along the first dimension and from bottom to top along the second dimension. 
+
+```{r}
+# Code to select points. 
+find.nearest <- function(new.pos){
+  # Compute distance to points and select nearest index
+  return(which.min(colSums((t(conf) - new.pos)^2)))
+}
+
+
+chosen.points.localMDS <- rbind(conf[find.nearest(c(-100,0)),], 
+                                conf[find.nearest(c(-40,0)), ], 
+                                conf[find.nearest(c(0,0)), ], 
+                                conf[find.nearest(c(20,0)), ], 
+                                conf[find.nearest(c(60,0)), ], 
+                                conf[find.nearest(c(40,-25)), ], 
+                                conf[find.nearest(c(40,0)),], 
+                                conf[find.nearest(c(40,20)), ],
+                                conf[find.nearest(c(40,50)), ])
+
+fnci <- function(p){
+  # Use to find indices of the chosen points. 
+  which(conf == p, arr.ind = T)
+}
+chosen.indices <- apply(chosen.points.localMDS, FUN = fnci, 1)[1,]
+chosen.points.localMDS <- data.matrix(chosen.points.localMDS)
+
+plot(conf, as = 1, main=paste0("Local MDS, k=",k,", tau=",tau), xlab = "Dim1", ylab = "Dim2")
+points(chosen.points.localMDS, col = 2, pch = 16)
+```
+
+The ZERO digits corresponding to each of the points are plotted below. 
+
+```{r}
+par(mfrow = c(3,3))
+apply(zip.zeros[chosen.indices,],1,plot.zip, use.first = T)
+par(mfrow = c(1,1))
+```
+
+The first five zeros (row-wise) travel from left to right in the first dimension of the scatter plot gained from local MDS. It seems like the first coordinate describes zeros from narrow to wide (in the west-east direction of the drawings). The last four zeros that are plotted show the movement from small values to larger values in the second dimension. It seems like the second coordinates describes zeros from flat to tall (in the south-north direction of the drawings).
+
+NOT SURE ABOUT THIS OPTIONAL PART. CANNOT GET IT TO PLOT ANYTHING. 
+
+```{r}
+zip.PC <- princomp(zip.zeros[,-1])
+scores <- zip.PC$scores[,1:3]
+
+plot3d(scores[,1], scores[,2], scores[,3], pch=19,cex=.5, col = 2, 
+       xlim = range(scores[,1]), ylim = range(scores[,2]), zlim = range(scores[,3])) 
+# Not sure why it does not plot anything.
+```
+
+# ISOMAP for Zero Digits
+
+The same tasks are solved with ISOMAP instead, in order to compare to the results obtained when using local MDS. 
+
+```{r, cache = T}
+k.iso <- 5
+ismp <- isomap(delta, k = k.iso, ndim = q)
+ismp.points <- ismp$points
+```
+
+The two-dimensional configuration found using ISOMAP can be seen below. 
+
+```{r}
+aux.plot <- plot(ismp,n.col=3,main="Output of ISOMAP Algorithm")
+points(aux.plot,"sites",pch=19,cex=.6)
+```
+
+```{r}
+chosen.points.ISO <- rbind(ismp.points[find.nearest(c(-80,0)),], 
+                                ismp.points[find.nearest(c(-40,0)), ], 
+                                ismp.points[find.nearest(c(0,0)), ], 
+                                ismp.points[find.nearest(c(20,0)), ], 
+                                ismp.points[find.nearest(c(60,0)), ], 
+                                ismp.points[find.nearest(c(40,-25)), ], 
+                                ismp.points[find.nearest(c(40,0)),], 
+                                ismp.points[find.nearest(c(40,20)), ],
+                                ismp.points[find.nearest(c(40,50)), ])
+
+fnci2 <- function(p){
+  # Use to find indices of the chosen points. 
+  which(ismp.points == p, arr.ind = T)
+}
+chosen.indices.ISO <- apply(chosen.points.ISO, FUN = fnci2, 1)[1,]
+chosen.points.ISO <- data.matrix(chosen.points.ISO)
+
+plot(ismp.points, main=paste0("ISOMAP, k=",k.iso), xlab = "Dim1", ylab = "Dim2")
+points(chosen.points.ISO, col = 2, pch = 16)
+```
+
+
+After selecting points the red points shown above, the corresponding zeros are plotted in a similar fashion as for local MDS.
+
+```{r}
+par(mfrow = c(3,3))
+apply(zip.zeros[chosen.indices.ISO, ],1,plot.zip, use.first = T)
+par(mfrow = c(1,1))
+```
+
+The same conclusions as for local MDS can be drawn from these plots. When looking more closely at the points selected, several of them have the same index in the training data for both methods, which explains why several of the images are the same. Thus, the results are very similar. 
+
+# Select the Tuning Parameters for Zero Digits 
+
+The local continuity meta criteria is used to select the tuning parameter $k$ in ISOMAP. The first cell of code is used to calculate the adjusted local continuity meta criteria and is taken from the lectures. 
+
+```{r}
+LCMC <- function(D1,D2,Kp){
+  D1 <- as.matrix(D1)
+  D2 <- as.matrix(D2)
+  n <- dim(D1)[1]
+  N.Kp.i <- numeric(n)
+  for (i in 1:n){
+    N1.i <- sort.int(D1[i,],index.return = TRUE)$ix[1:Kp]
+    N2.i <- sort.int(D2[i,],index.return = TRUE)$ix[1:Kp]
+    N.Kp.i[i] <- length(intersect(N1.i, N2.i))
+  }
+  N.Kp<-mean(N.Kp.i)
+  M.Kp.adj <- N.Kp/Kp - Kp/(n-1)
+  
+  return(list(N.Kp.i=N.Kp.i, M.Kp.adj=M.Kp.adj))
+}
+```
+
+Next, the function is used to find optimal $k$. We fix the dimension $q = 2$. The search for the optimal $k$ is restricted to integers between 3 and 10. Note that we begin at $k = 3$ because a lower $k$ gives fragmented data in the ISOMAP. 
+
+```{r, cache = T}
+Kp <- 10
+k.search <- 3:10
+nk <- length(k.search)
+LC <- rep(NA, nk)
+ISOMAP.k <- vector("list",nk)
+
+for (i in 1:nk){
+  ISOMAP.k[[i]] <- isomap(delta, ndim=q, 
+                            k = k.search[i])
+  D2.k <- dist(ISOMAP.k[[i]]$points[,1:q])
+  LC[i] <- LCMC(delta,D2.k,Kp)$M.Kp.adj
+}
+
+
+i.max <- which.max(LC)
+k.max <- k.search[i.max]
+ISOMAP.max <- ISOMAP.k[[i.max]]
+
+plot(k.search, LC, type="b", main=paste0("k.max=",round(k.max,4)))
+abline(v=k.max,col=2)
+```
+
+The graphical description of the low dimensional configuration corresponding to the optimal $k$ is given in the following. 
+
+
+# t-SNE for Zero Digits. 
+
+The same tasks are solved with t-SNE, in order to compare to the results obtained earlier. 
+
+```{r, cache = T}
+tsne <- Rtsne(zip.zeros, dims = q, perplexity = 40, theta = 0)
+tsne.points <- tsne$Y
+```
+
+```{r}
+plot(tsne.points, main="t-SNE", xlab = "Dim1", ylab = "Dim2")
+plot(tsne.points, as = 1, main="t-SNE", xlab = "Dim1", ylab = "Dim2")
+```
+
+We choose some points in order to "cover" the variance in the two-dimensional representation computed by t-SNE.
+
+```{r}
+# These points should be chosen in a better way to cover the variability IMO. Do later. 
+# I think something weird is happening here. 
+chosen.points.tSNE <- rbind(tsne.points[find.nearest(c(-40,-15)),], 
+                                tsne.points[find.nearest(c(-40,0)), ], 
+                                tsne.points[find.nearest(c(0,0)), ], 
+                                tsne.points[find.nearest(c(20,0)), ], 
+                                tsne.points[find.nearest(c(60,0)), ], 
+                                tsne.points[find.nearest(c(40,-25)), ], 
+                                tsne.points[find.nearest(c(40,0)),], 
+                                tsne.points[find.nearest(c(40,20)), ],
+                                tsne.points[find.nearest(c(40,50)), ])
+
+fnci3 <- function(p){
+  # Use to find indices of the chosen points. 
+  which(tsne.points == p, arr.ind = T)
+}
+chosen.indices.tSNE <- apply(chosen.points.tSNE, FUN = fnci3, 1)[1,]
+chosen.points.tSNE <- data.matrix(chosen.points.tSNE)
+
+plot(tsne.points, main="t-SNE", xlab = "Dim1", ylab = "Dim2")
+points(chosen.points.tSNE, col = 2, pch = 16)
+```
+
+The corresponding zeros to the selected points are plotted below. 
+
+```{r}
+par(mfrow = c(3,3))
+apply(zip.zeros[chosen.indices.tSNE, ],1,plot.zip, use.first = T)
+par(mfrow = c(1,1))
+```
+
+Looks very similar.
+
+OPTIONAL (same as for local MDS)
+
+## Select Tuning Parameter for Zero Digits
+
+The local continuity meta criteria is used to select the tuning parameter `perplexity` in t-SNE. We are still using the fixed lower dimension $q = 2$ and we are setting `theta` $= 0$. The search for the optimal value of `perplexity` is constrained to the values `c(20, 40, 60)`.
+
+```{r}
+perplex <- c(20,40,60)
+```
+

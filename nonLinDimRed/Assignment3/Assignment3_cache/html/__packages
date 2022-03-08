@@ -1,0 +1,14 @@
+base
+ggplot2
+dplyr
+plotrix
+colorspace
+e1071
+smacof
+rgl
+stops
+plot3D
+permute
+lattice
+vegan
+Rtsne
