@@ -41,7 +41,7 @@ plot.zip <- function(x,use.first=FALSE, ...){
   if (!use.first) title(x[1])
 }
 
-zip.train <- read.table("../unsup/zip.train")
+zip.train <- read.table("../../unsup/zip.train")
 zip.zeros <- zip.train %>% dplyr::filter(V1 == 0) %>% dplyr::select(-1)
 dim(zip.zeros)
 delta <- dist(zip.zeros)
@@ -95,20 +95,24 @@ The ZERO digits corresponding to each of the points are plotted below.
 ```{r}
 par(mfrow = c(3,3))
 apply(zip.zeros[chosen.indices,],1,plot.zip, use.first = T)
-par(mfrow = c(1,1))
 ```
 
 The first five zeros (row-wise) travel from left to right in the first dimension of the scatter plot gained from local MDS. It seems like the first coordinate describes zeros from narrow to wide (in the west-east direction of the drawings). The last four zeros that are plotted show the movement from small values to larger values in the second dimension. It seems like the second coordinates describes zeros from flat to tall (in the south-north direction of the drawings).
 
 NOT SURE ABOUT THIS OPTIONAL PART. CANNOT GET IT TO PLOT ANYTHING. 
+Could we show where the nine points we have chosen lie on the principal
+component plot below? Maybe have them be different colours or something
+so we can recognize them. Tried below, but it is an ugly plot..
 
 ```{r}
 zip.PC <- princomp(zip.zeros[,-1])
 scores <- zip.PC$scores[,1:3]
 
-plot3d(scores[,1], scores[,2], scores[,3], pch=19,cex=.5, col = 2, 
-       xlim = range(scores[,1]), ylim = range(scores[,2]), zlim = range(scores[,3])) 
-# Not sure why it does not plot anything.
+points3D(scores[,1], scores[,2], scores[,3], pch=19,cex=.4, col = 1, 
+       xlim = range(scores[,1]), ylim = range(scores[,2]), zlim = range(scores[,3]),
+       xlab = "PC1", ylab = "PC2", zlab ="PC3")
+
+points3D(scores[chosen.indices,1],scores[chosen.indices,2],scores[chosen.indices,3], col = 2, pch = 19, add = T)
 ```
 
 # ISOMAP for Zero Digits
@@ -256,7 +260,7 @@ The corresponding zeros to the selected points are plotted below.
 ```{r}
 par(mfrow = c(3,3))
 apply(zip.zeros[chosen.indices.tSNE, ],1,plot.zip, use.first = T)
-par(mfrow = c(1,1))
+par(mfrow = c(1,3))
 ```
 
 Looks very similar.
