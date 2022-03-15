@@ -129,15 +129,15 @@ points(aux.plot,"sites",pch=19,cex=.6)
 ```
 
 ```{r}
-chosen.indices.ISO <- c(find.nearest(c(-100,0), ismp.points), 
-                                find.nearest(c(-40,0), ismp.points), 
-                                find.nearest(c(-10,0), ismp.points), 
-                                find.nearest(c(10,0), ismp.points), 
-                                find.nearest(c(40,0), ismp.points), 
-                                find.nearest(c(30,-45), ismp.points), 
-                                find.nearest(c(30,-20), ismp.points), 
-                                find.nearest(c(30,0), ismp.points),
-                                find.nearest(c(30,25), ismp.points))
+chosen.indices.ISO <- c(find.nearest(c(-45,20), ismp.points), 
+                                find.nearest(c(0,20), ismp.points), 
+                                find.nearest(c(45,20), ismp.points), 
+                                find.nearest(c(-45,-10), ismp.points), 
+                                find.nearest(c(0,-10), ismp.points), 
+                                find.nearest(c(45,-10), ismp.points), 
+                                find.nearest(c(-45,-45), ismp.points), 
+                                find.nearest(c(0,-45), ismp.points),
+                                find.nearest(c(45,-45), ismp.points))
 
 chosen.points.ISO<- data.matrix(ismp.points[chosen.indices.ISO,])
 
@@ -145,7 +145,7 @@ plot(ismp.points, main=paste0("ISOMAP, k=",k.iso), xlab = "Dim1", ylab = "Dim2")
 points(chosen.points.ISO, col = 2, pch = 16)
 ```
 
-After selecting points the red points shown above, the corresponding zeros are plotted in a similar fashion as for local MDS.
+After selecting points the red points shown above, the corresponding zeros are plotted in a similar fashion as for local MDS. Notice that the red points have now been selected in a grid-like way. Starting from the top left followed by the top middle, top right and then middle left and so on. Since the points are less spread to the left this means that the three left selected points are more close to each other.  
 
 ```{r}
 par(mfrow = c(3,3))
@@ -153,7 +153,9 @@ apply(zip.zeros[chosen.indices.ISO, ],1,plot.zip, use.first = T)
 par(mfrow = c(1,1))
 ```
 
-As earlier, the first five images show the traversion from west to east in the first dimension, while the last four images show the traversion from south to north in the second dimension. The first dimension seems to describe the ... and the second dimension seems to describe the ...
+#As earlier, the first five images show the traversion from west to east in the first dimension, while the last four images show the traversion from south to north in the second dimension. The first dimension seems to describe the ... and the second dimension seems to describe the ...
+
+As before, the zeros corresponding to the red points are plotted. The grid of zeros now directly corresponds to the, somewhat skewed, grid of red points above. When inspecting, we can see that the traversion from west to east seems to describe the width of the zeros while the traversion from south to north are probably describing the hight of the zero.
 
 # Select the Tuning Parameters for Zero Digits 
 
