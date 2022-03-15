@@ -117,8 +117,9 @@ points3D(scores[,1], scores[,2], scores[,3], pch=19,cex=.4, col = 1,
        xlim = range(scores[,1]), ylim = range(scores[,2]), zlim = range(scores[,3]),
        xlab = "PC1", ylab = "PC2", zlab ="PC3")
 points3D(s.pc1, s.pc2, s.pc3, col = 2, add = T)
+#surf3D(as.matrix(s.pc1), as.matrix(s.pc2), as.matrix(s.pc3), colvar = as.matrix(s.pc3))
 ```
-surf3D(as.matrix(s.pc1), as.matrix(s.pc2), as.matrix(s.pc3), colvar = as.matrix(s.pc3))
+
 
 # ISOMAP for Zero Digits
 
@@ -143,10 +144,10 @@ chosen.indices.ISO <- c(find.nearest(c(-100,0), ismp.points),
                                 find.nearest(c(-10,0), ismp.points), 
                                 find.nearest(c(10,0), ismp.points), 
                                 find.nearest(c(40,0), ismp.points), 
-                                find.nearest(c(30,-45), ismp.points), 
-                                find.nearest(c(30,-20), ismp.points), 
-                                find.nearest(c(30,0), ismp.points),
-                                find.nearest(c(30,25), ismp.points))
+                                find.nearest(c(25,-45), ismp.points), 
+                                find.nearest(c(25,-20), ismp.points), 
+                                find.nearest(c(25,0), ismp.points),
+                                find.nearest(c(25,25), ismp.points))
 
 chosen.points.ISO<- data.matrix(ismp.points[chosen.indices.ISO,])
 
@@ -164,9 +165,13 @@ par(mfrow = c(1,1))
 
 As earlier, the first five images show the traversion from west to east in the first dimension, while the last four images show the traversion from south to north in the second dimension. The first dimension seems to describe the ... and the second dimension seems to describe the ...
 
+TOLKNINGEN HER MANGLER!
+
 # Select the Tuning Parameters for Zero Digits 
 
-The local continuity meta criteria is used to select the tuning parameter $k$ in ISOMAP. The first cell of code is used to calculate the adjusted local continuity meta criteria and is taken from the lectures. 
+## ISOMAP
+
+The local continuity meta criteria is used to select the tuning parameter $k$ in ISOMAP. The first cell of code is used to calculate the adjusted local continuity meta criteria (function taken from the lecture material). 
 
 ```{r}
 LCMC <- function(D1,D2,Kp){
@@ -189,7 +194,7 @@ LCMC <- function(D1,D2,Kp){
 Next, the function is used to find optimal $k$. We fix the dimension $q = 2$. The search for the optimal $k$ is restricted to integers between 3 and 10. Note that we begin at $k = 3$ because a lower $k$ gives fragmented data in the ISOMAP. 
 
 ```{r, cache = T}
-Kp <- 10
+Kp <- 5
 k.search <- 3:10
 nk <- length(k.search)
 LC <- rep(NA, nk)
@@ -202,7 +207,6 @@ for (i in 1:nk){
   LC[i] <- LCMC(delta,D2.k,Kp)$M.Kp.adj
 }
 
-
 i.max <- which.max(LC)
 k.max <- k.search[i.max]
 ISOMAP.max <- ISOMAP.k[[i.max]]
@@ -211,8 +215,48 @@ plot(k.search, LC, type="b", main=paste0("k.max=",round(k.max,4)))
 abline(v=k.max,col=2)
 ```
 
+The plot above shows that the optimal $k$ is $k =$ `r k.max`.
 The graphical description of the low dimensional configuration corresponding to the optimal $k$ is given in the following. 
 
+```{r}
+ismp.opt <- isomap(delta, k = k.max, ndim = q)
+ismp.opt.points <- ismp.opt$points
+
+aux.plot.opt <- plot(ismp.opt,n.col=3,main=paste0("Output of ISOMAP Algorithm with Optimal k=",k.max))
+points(aux.plot.opt,"sites",pch=19,cex=.6)
+```
+
+A similar description for 9 chosen digits can be done here. HER MANGLER DET NOE
+
+## Local MDS
+
+The local continuity meta criteria can also be used to select the optimal parameters $\tau$ and $k$ in Local MDS. We restrict the search of $k$ to the integers $5, 10, 15$ and the search for $\tau$ is restricted to $0.1, 0.5, 1$.
+
+```{r, cache = T}
+Kp <- 10
+K <- c(5,10,15)
+tau <- c(.1,.5,1)
+
+LC <- matrix(0,nrow=length(K),ncol=length(tau))
+LocalMDS.k.tau <- array(vector("list",1),dim=dim(LC))
+
+for (i in 1:length(K)){
+  for (j in 1:length(tau)){
+    LocalMDS.k.tau[[i,j]] <- lmds(as.matrix(delta), k = i, tau = j, ndim = q, itmax = 100)$conf
+    D2.k.tau <- dist(LocalMDS.k.tau[[i,j]])
+    LC[i,j] <- LCMC(delta,D2.k.tau,Kp)$M.Kp.adj
+  }
+}
+
+ij.max <- arrayInd(which.max(LC),.dim=dim(LC))
+k.max <- K[ij.max[1]] 
+tau.max <- tau[ij.max[2]] 
+LocalMDS.max <- LocalMDS.k.tau[[ij.max[1],ij.max[2]]]
+
+print(paste0("k.max=",k.max,"; tau.max=",tau.max))
+```
+
+HER MANGLER DET NOE
 
 # t-SNE for Zero Digits. 
 
@@ -231,46 +275,57 @@ plot(tsne.points, as = 1, main="t-SNE", xlab = "Dim1", ylab = "Dim2")
 We choose some points in order to "cover" the variance in the two-dimensional representation computed by t-SNE.
 
 ```{r}
-# These points should be chosen in a better way to cover the variability IMO. Do later. 
-# I think something weird is happening here. 
-chosen.points.tSNE <- rbind(tsne.points[find.nearest(c(-40,-15)),], 
-                                tsne.points[find.nearest(c(-40,0)), ], 
-                                tsne.points[find.nearest(c(0,0)), ], 
-                                tsne.points[find.nearest(c(20,0)), ], 
-                                tsne.points[find.nearest(c(60,0)), ], 
-                                tsne.points[find.nearest(c(40,-25)), ], 
-                                tsne.points[find.nearest(c(40,0)),], 
-                                tsne.points[find.nearest(c(40,20)), ],
-                                tsne.points[find.nearest(c(40,50)), ])
+chosen.indices.tsne <- c(find.nearest(c(-60,0), tsne.points), 
+                                find.nearest(c(-30,0), tsne.points), 
+                                find.nearest(c(-10,0), tsne.points), 
+                                find.nearest(c(20,0), tsne.points), 
+                                find.nearest(c(60,0), tsne.points), 
+                                find.nearest(c(-30,-30), tsne.points), 
+                                find.nearest(c(-30,0), tsne.points), 
+                                find.nearest(c(-30,15), tsne.points),
+                                find.nearest(c(-30,40), tsne.points))
 
-fnci3 <- function(p){
-  # Use to find indices of the chosen points. 
-  which(tsne.points == p, arr.ind = T)
-}
-chosen.indices.tSNE <- apply(chosen.points.tSNE, FUN = fnci3, 1)[1,]
-chosen.points.tSNE <- data.matrix(chosen.points.tSNE)
+chosen.points.tsne <- data.matrix(tsne.points[chosen.indices.tsne,])
 
 plot(tsne.points, main="t-SNE", xlab = "Dim1", ylab = "Dim2")
-points(chosen.points.tSNE, col = 2, pch = 16)
+points(chosen.points.tsne, col = 2, pch = 16)
 ```
 
 The corresponding zeros to the selected points are plotted below. 
 
 ```{r}
 par(mfrow = c(3,3))
-apply(zip.zeros[chosen.indices.tSNE, ],1,plot.zip, use.first = T)
+apply(zip.zeros[chosen.indices.tsne, ],1,plot.zip, use.first = T)
 par(mfrow = c(1,3))
 ```
 
-Looks very similar.
+As earlier, the first five images show the traversion from west to east in the first dimension, while the last four images show the traversion from south to north in the second dimension. The first dimension seems to describe the ... and the second dimension seems to describe the ...
 
-OPTIONAL (same as for local MDS)
 
-## Select Tuning Parameter for Zero Digits
+# Select Tuning Parameter for Zero Digits
 
 The local continuity meta criteria is used to select the tuning parameter `perplexity` in t-SNE. We are still using the fixed lower dimension $q = 2$ and we are setting `theta` $= 0$. The search for the optimal value of `perplexity` is constrained to the values `c(20, 40, 60)`.
 
-```{r}
+```{r, cache = T}
 perplex <- c(20,40,60)
+Kp <- 10
+
+LC <- numeric(length(perplex))
+Rtsne.k <- vector("list",length(perplex))
+
+for (i in 1:length(perplex)){
+    Rtsne.k[[i]] <- Rtsne(zip.zeros, perplexity=perplex[i], dims=q,
+                          theta=0, pca=FALSE, max_iter = 500)
+    D2.k <- dist(Rtsne.k[[i]]$Y)
+    LC[i] <- LCMC(delta,D2.k,Kp)$M.Kp.adj
+}
+
+i.max <- which.max(LC)
+perplexity.max <- perplex[i.max[1]] 
+Rtsne.max <- Rtsne.k[[i.max]]
+
+plot(perplex,LC, main=paste0("perplexity.max=",perplexity.max))
+abline(v=perplex[i.max],col=2)
 ```
 
+HER MANGLER DET NOE
