@@ -64,28 +64,24 @@ The scatterplot is shown below. 9 points are selected in order to try to "cover"
 
 ```{r}
 # Code to select points. 
-find.nearest <- function(new.pos){
-  # Compute distance to points and select nearest index
-  return(which.min(colSums((t(conf) - new.pos)^2)))
+find.nearest <- function(new.pos, data){
+  # Compute distance to points and select nearest index.
+  return(which.min(colSums((t(data) - new.pos)^2)))
 }
 
 
-chosen.points.localMDS <- rbind(conf[find.nearest(c(-100,0)),], 
-                                conf[find.nearest(c(-40,0)), ], 
-                                conf[find.nearest(c(0,0)), ], 
-                                conf[find.nearest(c(20,0)), ], 
-                                conf[find.nearest(c(60,0)), ], 
-                                conf[find.nearest(c(40,-25)), ], 
-                                conf[find.nearest(c(40,0)),], 
-                                conf[find.nearest(c(40,20)), ],
-                                conf[find.nearest(c(40,50)), ])
+chosen.indices.localMDS <- c(find.nearest(c(-100,0), conf), 
+                                find.nearest(c(-40,0), conf), 
+                                find.nearest(c(0,0), conf), 
+                                find.nearest(c(20,0), conf), 
+                                find.nearest(c(60,0), conf), 
+                                find.nearest(c(40,-25), conf), 
+                                find.nearest(c(40,0), conf), 
+                                find.nearest(c(40,20), conf),
+                                find.nearest(c(40,50), conf))
 
-fnci <- function(p){
-  # Use to find indices of the chosen points. 
-  which(conf == p, arr.ind = T)
-}
-chosen.indices <- apply(chosen.points.localMDS, FUN = fnci, 1)[1,]
-chosen.points.localMDS <- data.matrix(chosen.points.localMDS)
+
+chosen.points.localMDS <- data.matrix(conf[chosen.indices.localMDS,])
 
 plot(conf, as = 1, main=paste0("Local MDS, k=",k,", tau=",tau), xlab = "Dim1", ylab = "Dim2")
 points(chosen.points.localMDS, col = 2, pch = 16)
@@ -95,10 +91,10 @@ The ZERO digits corresponding to each of the points are plotted below.
 
 ```{r}
 par(mfrow = c(3,3))
-apply(zip.zeros[chosen.indices,],1,plot.zip, use.first = T)
+apply(zip.zeros[chosen.indices.localMDS,],1,plot.zip, use.first = T)
 ```
 
-The first five zeros (row-wise) travel from left to right in the first dimension of the scatter plot gained from local MDS. It seems like the first coordinate describes zeros from narrow to wide (in the west-east direction of the drawings). The last four zeros that are plotted show the movement from small values to larger values in the second dimension. It seems like the second coordinates describes zeros from flat to tall (in the south-north direction of the drawings).
+The first five zeros (row-wise) travel from left to right in the first dimension of the scatter plot gained from local MDS. It seems like the first coordinate describes zeros from narrow to wide (in the west-east direction of the drawings). The last four zeros that are plotted show the movement from small values to larger values in the second dimension. It seems like the second coordinates describes zeros from thin thick (in the south-north direction of the drawings). Thus, the first dimensions describe the changing sizes of the zeros, while the second dimensions describes the different line thicknesses of the zeros. This can be seen more clearly when plotting more points, but we have only shown 9 here. 
 
 
 ```{r}
@@ -142,27 +138,21 @@ points(aux.plot,"sites",pch=19,cex=.6)
 ```
 
 ```{r}
-chosen.points.ISO <- rbind(ismp.points[find.nearest(c(-80,0)),], 
-                                ismp.points[find.nearest(c(-40,0)), ], 
-                                ismp.points[find.nearest(c(0,0)), ], 
-                                ismp.points[find.nearest(c(20,0)), ], 
-                                ismp.points[find.nearest(c(60,0)), ], 
-                                ismp.points[find.nearest(c(40,-25)), ], 
-                                ismp.points[find.nearest(c(40,0)),], 
-                                ismp.points[find.nearest(c(40,20)), ],
-                                ismp.points[find.nearest(c(40,50)), ])
+chosen.indices.ISO <- c(find.nearest(c(-100,0), ismp.points), 
+                                find.nearest(c(-40,0), ismp.points), 
+                                find.nearest(c(-10,0), ismp.points), 
+                                find.nearest(c(10,0), ismp.points), 
+                                find.nearest(c(40,0), ismp.points), 
+                                find.nearest(c(30,-45), ismp.points), 
+                                find.nearest(c(30,-20), ismp.points), 
+                                find.nearest(c(30,0), ismp.points),
+                                find.nearest(c(30,25), ismp.points))
 
-fnci2 <- function(p){
-  # Use to find indices of the chosen points. 
-  which(ismp.points == p, arr.ind = T)
-}
-chosen.indices.ISO <- apply(chosen.points.ISO, FUN = fnci2, 1)[1,]
-chosen.points.ISO <- data.matrix(chosen.points.ISO)
+chosen.points.ISO<- data.matrix(ismp.points[chosen.indices.ISO,])
 
 plot(ismp.points, main=paste0("ISOMAP, k=",k.iso), xlab = "Dim1", ylab = "Dim2")
 points(chosen.points.ISO, col = 2, pch = 16)
 ```
-
 
 After selecting points the red points shown above, the corresponding zeros are plotted in a similar fashion as for local MDS.
 
@@ -172,7 +162,7 @@ apply(zip.zeros[chosen.indices.ISO, ],1,plot.zip, use.first = T)
 par(mfrow = c(1,1))
 ```
 
-The same conclusions as for local MDS can be drawn from these plots. When looking more closely at the points selected, several of them have the same index in the training data for both methods, which explains why several of the images are the same. Thus, the results are very similar. 
+As earlier, the first five images show the traversion from west to east in the first dimension, while the last four images show the traversion from south to north in the second dimension. The first dimension seems to describe the ... and the second dimension seems to describe the ...
 
 # Select the Tuning Parameters for Zero Digits 
 
