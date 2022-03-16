@@ -12,3 +12,5 @@ permute
 lattice
 vegan
 Rtsne
+nlme
+mgcv
