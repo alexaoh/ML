@@ -96,6 +96,19 @@ apply(zip.zeros[chosen.indices.localMDS,],1,plot.zip, use.first = T)
 
 The first five zeros (row-wise) travel from left to right in the first dimension of the scatter plot gained from local MDS. It seems like the first coordinate describes zeros from narrow to wide (in the west-east direction of the drawings). The last four zeros that are plotted show the movement from small values to larger values in the second dimension. It seems like the second coordinates describes zeros from thin thick (in the south-north direction of the drawings). Thus, the first dimensions describe the changing sizes of the zeros, while the second dimensions describes the different line thicknesses of the zeros. This can be seen more clearly when plotting more points, but we have only shown 9 here. 
 
+###  (OPTIONAL) Relate the results from Local MDS with those obtained by the first 3 principal components. In particular, could you represent in any way the results obtained by Local MDS in the 3-dimensional scatterplot of (PC1, PC2, PC3)?
+
+
+Below the dimensions found using Local MDS are plotted against the first three
+principal components. We observe that the first dimension of the Local MDS 
+posetively correlates with the first PC. Similarly the second dimension of the 
+Local MDS correlates negatively with the second PC. Third PC does not show as 
+clear of a correlations, but it absolutely show a pattern.
+To create the plots we fit a GAM using splines for each principal component against
+the coordinates in the Local MDS dimensions.
+Finally we plot all three together in the PC1,PC2,PC3 plane.
+The plot seems reasonable, but is hard to read and interpret.
+
 
 ```{r}
 zip.PC <- princomp(zip.zeros[,-1])
@@ -109,14 +122,17 @@ s.pc1 <- smooth.pc1$fitted.values
 s.pc2 <- smooth.pc2$fitted.values
 s.pc3 <- smooth.pc3$fitted.values
 
-points3D(conf[,1], conf[,2], s.pc1)
-points3D(conf[,1], conf[,2], s.pc2)
-points3D(conf[,1], conf[,2], s.pc3)
+points3D(conf[,1], conf[,2], s.pc1,
+         xlab = "Dim1", ylab = "Dim2", zlab ="PC1")
+points3D(conf[,1], conf[,2], s.pc2,
+         xlab = "Dim1", ylab = "Dim2", zlab ="PC2")
+points3D(conf[,1], conf[,2], s.pc3,
+         xlab = "Dim1", ylab = "Dim2", zlab ="PC3")
 
 points3D(scores[,1], scores[,2], scores[,3], pch=19,cex=.4, col = 1, 
        xlim = range(scores[,1]), ylim = range(scores[,2]), zlim = range(scores[,3]),
        xlab = "PC1", ylab = "PC2", zlab ="PC3")
-points3D(s.pc1, s.pc2, s.pc3, col = 2, add = T)
+points3D(s.pc1, s.pc2, s.pc3, col = 2, add = T, alpha = 0.5)
 ```
 
 
