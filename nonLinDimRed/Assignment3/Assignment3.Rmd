@@ -193,6 +193,46 @@ As before, the zeros corresponding to the red points are plotted. The grid of ze
 
 TOLKNINGEN HER MANGLER!
 
+
+#### OPTIONAL
+
+As before we first plot the two ISOMAP dimensions found against the first
+three principal components separately. It looks like the first ISOMAP 
+dimension positively correlates with the first PC (very similar to local MDS).
+The second dimension negatively correlates with the third PC, while the 
+correlation with the second PC is harder to interpret. We observe that the plots
+are very similar to the similar plots using Local MDS, with the exception
+that the second dimension now correlates with PC3 and not PC2. 
+This behaviour is supported by the plots of zeros, as we see similar behaviour
+as in local MDS moving along the first dimension, but different when moving 
+along the second.
+Finally the fitted points are plotted in the three dimensional PC space.
+
+```{r}
+zip.PC <- princomp(zip.zeros[,-1])
+scores <- zip.PC$scores[,1:3]
+
+smooth.pc1 <- gam(scores[,1] ~ s(ismp.points[,1],ismp.points[,2]))
+smooth.pc2 <- gam(scores[,2] ~ s(ismp.points[,1],ismp.points[,2]))
+smooth.pc3 <- gam(scores[,3] ~ s(ismp.points[,1],ismp.points[,2]))
+
+s.pc1 <- smooth.pc1$fitted.values
+s.pc2 <- smooth.pc2$fitted.values
+s.pc3 <- smooth.pc3$fitted.values
+
+points3D(ismp.points[,1], ismp.points[,2], s.pc1,
+         xlab = "Dim1", ylab = "Dim2", zlab ="PC1")
+points3D(ismp.points[,1], ismp.points[,2], s.pc2,
+         xlab = "Dim1", ylab = "Dim2", zlab ="PC2")
+points3D(ismp.points[,1], ismp.points[,2], s.pc3,
+         xlab = "Dim1", ylab = "Dim2", zlab ="PC3")
+
+points3D(scores[,1], scores[,2], scores[,3], pch=19,cex=.4, col = 1, 
+       xlim = range(scores[,1]), ylim = range(scores[,2]), zlim = range(scores[,3]),
+       xlab = "PC1", ylab = "PC2", zlab ="PC3")
+points3D(s.pc1, s.pc2, s.pc3, col = 2, add = T, alpha = 0.5)
+```
+
 # Select the Tuning Parameters for Zero Digits 
 
 ## ISOMAP
@@ -327,6 +367,33 @@ par(mfrow = c(1,3))
 
 As earlier, the first five images show the traversion from west to east in the first dimension, while the last four images show the traversion from south to north in the second dimension. The first dimension seems to describe the ... and the second dimension seems to describe the ...
 
+#### Optional
+
+
+```{r}
+zip.PC <- princomp(zip.zeros[,-1])
+scores <- zip.PC$scores[,1:3]
+
+smooth.pc1 <- gam(scores[,1] ~ s(tsne.points[,1],tsne.points[,2]))
+smooth.pc2 <- gam(scores[,2] ~ s(tsne.points[,1],tsne.points[,2]))
+smooth.pc3 <- gam(scores[,3] ~ s(tsne.points[,1],tsne.points[,2]))
+
+s.pc1 <- smooth.pc1$fitted.values
+s.pc2 <- smooth.pc2$fitted.values
+s.pc3 <- smooth.pc3$fitted.values
+
+points3D(tsne.points[,1], tsne.points[,2], s.pc1,
+         xlab = "Dim1", ylab = "Dim2", zlab ="PC1")
+points3D(tsne.points[,1], tsne.points[,2], s.pc2,
+         xlab = "Dim1", ylab = "Dim2", zlab ="PC2")
+points3D(tsne.points[,1], tsne.points[,2], s.pc3,
+         xlab = "Dim1", ylab = "Dim2", zlab ="PC3")
+
+points3D(scores[,1], scores[,2], scores[,3], pch=19,cex=.4, col = 1, 
+       xlim = range(scores[,1]), ylim = range(scores[,2]), zlim = range(scores[,3]),
+       xlab = "PC1", ylab = "PC2", zlab ="PC3")
+points3D(s.pc1, s.pc2, s.pc3, col = 2, add = T, alpha = 0.5)
+```
 
 # Select Tuning Parameter for Zero Digits
 
