@@ -97,8 +97,7 @@ apply(zip.zeros[chosen.indices.localMDS,],1,plot.zip, use.first = T)
 
 The first five zeros (row-wise) travel from left to right in the first dimension of the scatter plot gained from local MDS. It seems like the first coordinate describes zeros from narrow to wide (in the west-east direction of the drawings). The last four zeros that are plotted show the movement from small values to larger values in the second dimension. It seems like the second coordinates describes zeros from thin thick (in the south-north direction of the drawings). Thus, the first dimensions describe the changing sizes of the zeros, while the second dimensions describes the different line thicknesses of the zeros. This can be seen more clearly when plotting more points, but we have only shown 9 here. 
 
-###  (OPTIONAL) Relate the results from Local MDS with those obtained by the first 3 principal components. In particular, could you represent in any way the results obtained by Local MDS in the 3-dimensional scatterplot of (PC1, PC2, PC3)?
-
+## Optional
 
 Below the dimensions found using Local MDS are plotted against the first three
 principal components. We observe that the first dimension of the Local MDS 
@@ -182,6 +181,8 @@ par(mfrow = c(1,1))
 
 As before, the zeros corresponding to the red points are plotted. The grid of zeros now directly corresponds to the, somewhat skewed, grid of red points above. When inspecting, we can see that the traversion from west to east seems to describe the width of the zeros while the traversion from south to north could be describing the height of the zero.
 
+
+## Optional
 
 As before we first plot the two ISOMAP dimensions found against the first
 three principal components separately. It looks like the first ISOMAP 
@@ -281,7 +282,7 @@ points(aux.plot.opt,"sites",pch=19,cex=.6)
 
 A similar description for 9 chosen digits can be done here. HER MANGLER DET NOE
 
-## Local MDS
+## Local MDS (Optional)
 
 The local continuity meta criteria can also be used to select the optimal parameters $\tau$ and $k$ in Local MDS. We restrict the search of $k$ to the integers $5, 10, 15$ and the search for $\tau$ is restricted to $0.1, 0.5, 1$.
 
@@ -309,7 +310,6 @@ LocalMDS.max <- LocalMDS.k.tau[[ij.max[1],ij.max[2]]]
 print(paste0("k.max=",k.max,"; tau.max=",tau.max))
 ```
 
-HER MANGLER DET NOE
 
 # t-SNE for Zero Digits. 
 
@@ -358,6 +358,8 @@ local MDS and ISOMAP the wide zeros are on the left, and narrow on the right.
 The second dimension is harder to interpret, it can seem like low values give nice
 round zeros, while higher values give skewed and "flawed" zeros.
 
+## Optional
+
 Below we fit the dimensions against the first three principal components as before.
 Firstly we observe that the first dimension correlates negatively with the first principal component. 
 From before we know that PC1 has to do with the width of the number, so this matches our expectation. 
@@ -392,7 +394,7 @@ points3D(scores[,1], scores[,2], scores[,3], pch=19,cex=.4, col = 1,
 points3D(s.pc1, s.pc2, s.pc3, col = 2, add = T, alpha = 0.5)
 ```
 
-# Select Tuning Parameter for Zero Digits
+# Select Tuning Parameter for Zero Digits (Optional)
 
 The local continuity meta criteria is used to select the tuning parameter `perplexity` in t-SNE. We are still using the fixed lower dimension $q = 2$ and we are setting `theta` $= 0$. The search for the optimal value of `perplexity` is constrained to the values `c(20, 40, 60)`.
 
@@ -418,4 +420,3 @@ plot(perplex,LC, main=paste0("perplexity.max=",perplexity.max))
 abline(v=perplex[i.max],col=2)
 ```
 
-HER MANGLER DET NOE
