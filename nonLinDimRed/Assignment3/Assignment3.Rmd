@@ -164,15 +164,6 @@ chosen.indices.ISO <- c(find.nearest(c(-45,20), ismp.points),
                                 find.nearest(c(-45,-45), ismp.points), 
                                 find.nearest(c(0,-45), ismp.points),
                                 find.nearest(c(45,-45), ismp.points))
-chosen.indices.ISO <- c(find.nearest(c(-100,0), ismp.points), 
-                                find.nearest(c(-40,0), ismp.points), 
-                                find.nearest(c(-10,0), ismp.points), 
-                                find.nearest(c(10,0), ismp.points), 
-                                find.nearest(c(40,0), ismp.points), 
-                                find.nearest(c(25,-45), ismp.points), 
-                                find.nearest(c(25,-20), ismp.points), 
-                                find.nearest(c(25,0), ismp.points),
-                                find.nearest(c(25,25), ismp.points))
 
 chosen.points.ISO<- data.matrix(ismp.points[chosen.indices.ISO,])
 
