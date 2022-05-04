@@ -1,0 +1,7 @@
+https://towardsdatascience.com/kernel-function-6f1d2be6091
+
+https://www.geeksforgeeks.org/major-kernel-functions-in-support-vector-machine-svm/
+
+List of Kernel functions for ML: http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/
+
+Different Kernel methods we could have a look at: https://www.educba.com/kernel-methods-in-machine-learning/
