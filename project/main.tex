@@ -22,7 +22,7 @@
 \renewcommand{\headrulewidth}{1pt}
 \renewcommand{\footrulewidth}{1pt}
 
-\title{Numerical Methods in Kernel Machines}
+\title{Numerical Methods for Kernel Machines}
 \author{Ulrik Bernhardt Danielsen and Alexander Johansen Ohrt}
 
 \theoremstyle{plain}
@@ -48,45 +48,45 @@
 
 
 \section{Abstract}
-This report contains the final practical work in the course Machine Learning at Universitat Politècnica de Catalunya.
-The objective of this work is to describe the problem of computational complexity for kernel machines, both why the problem arises and some ways to deal with them.
-Some techniques will be more general, while others will be specific to specific kernel machines. 
+This report contains the final practical work in the course \textit{Machine Learning} at \textit{Universitat Politècnica de Catalunya}.
+The objective of this work is to describe the problem of computational complexity for kernel machines — both how such problems arise and some ways to deal with them.
+Some techniques for solving such problems will be general (model-agnostic), while others will be specific to some kernel machines (model-specific). 
 
 
-
-\section{Introduction and previous work}
+\section{Introduction}
 Many common learning algorithms can and have been kernelized.
-By reformulating the problems by use of inner products between datapoints, a well chosen kernel can often transform the data into a feature space where better predictions or inference can be made.
+When reformulating the problems by use of inner products between datapoints, a well chosen kernel can transform the data into a feature space where better predictions or inference can be made.
 Unfortunately these kernelized methods grow in computational complexity as the data grows larger. In the time of \textit{Big Data}, this poses a real problem.
 
+The problem this work is intended to describe and tackle is the problem of computational feasibility for kernel machines. A simple evaluation of every element in the Gram matrix takes $\mathcal{O}(n^2)$ operations. Since this is obviously not the only computation that needs to be done when using these methods, they can often become computationally expensive. In order to remedy this problem one possible solution is using \textit{Matrix-free} methods, which in general do not need the entire Gram matrix explicitly. Instead they work by calculating matrix-vector products $Kx$ for arbitrary $x$ \cite{davies}. Some examples of methods are \textit{conjugate gradient}, \textit{power iteration} and \textit{Lanczos algorithm} \cite{wiki:Matrix-free_methods}. These methods are iterative, which means that their numerical stability and convergence rates are related to the condition number of the Gram matrix $\kappa(K)$. Low values of the condition number means that the problem is well-conditioned, which implies numerically stable calculations in few iterations. Large values of the condition number means the the problem is ill-conditioned — this leads to slow convergence or no convergence at all. Pre-conditioning can be used to ensure that $\kappa(K)$ stays low, leading to efficient and accurate iterative methods \cite{davies}.
 
 Plenty of previous work has been done on the manner of making kernelized methods computationally feasible with growing amounts of data. 
 For example, matrix-free iterative methods can be used to work with the Gram matrix in more efficient ways. A specific example of a method that can be used for tackling scalability issues of kernel machines is the conjugate gradient algorithm. This algorithm alleviates the need for storage, since the Gram matrix need not be stored explicitly, as well as improves computational speed, since stochastic gradients and parallelization can be used. However, the condition number $\kappa(K)$ of the Gram matrix is often large, which means that the algorithm needs some remedy. Preconditioning for kernel machines is discussed in \cite{cutajar}.
 
-Other ways of making kernel machines less computationally costly are adapting them to be trained on graphics processing units (GPUs). Most modern machine learning models facilitate computations on a GPU, where the models are often trained using Stochastic Gradient Descent (SGD). The training time of a kernel machine can be decreased when given access to a parallel computational resource (like a GPU) by learning a new data and computational resource dependent kernel. An algorithm that modifies the optimization procedure of kernel machines without changing the learned predictor function, extending linear scaling to match the computational power of a GPU, is developed in \cite{belkin}. More on so-called linear scaling of SGD for convex loss functions can be found in \cite{Ma}. A solver for Support Vector Machines (SVMs) when training on a GPU is described in \cite{sundaram_acceleratingmachine} . Another discussion of how SVM training can be efficiently implemented on a GPU, for a wide range of kernels, for both binary and multiclass variants, is given in \cite{cotter}. The implementation that is presented also takes advantage of sparsity in the training set, setting it apart from some other GPU SVM solvers. 
+Other ways of making kernel machines less computationally costly are adapting them to be trained on graphics processing units (GPUs). Most modern machine learning models facilitate computations on a GPU, where the models are often trained using Stochastic Gradient Descent (SGD). The training time of a kernel machine can be decreased when given access to a parallel computational resource (like a GPU) by learning a new kernel dependent on the data and on the computational resource. An algorithm that modifies the optimization procedure of kernel machines without changing the learned predictor function, extending linear scaling to match the computational power of a GPU, is developed in \cite{belkin}. More on so-called linear scaling of SGD for convex loss functions can be found in \cite{Ma}. A solver for Support Vector Machines (SVMs) when training on a GPU is described in \cite{sundaram_acceleratingmachine}. Another discussion of how SVM training can be efficiently implemented on a GPU, for a wide range of kernels, for both binary and multiclass variants, is given in \cite{cotter}. The implementation that is presented also takes advantage of sparsity in the training set, setting it apart from some other GPU SVM solvers. 
 
 
 \section{Background}
-\subsection{Kernel machines}
+\subsection{Kernel Machines}
 A \textit{kernel} is a positive semi-definite function mapping two arguments (often vectors) from a space $\mathcal{X}$ onto the real line, $k(x,x'): \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$.
 Given a dataset $\mathcal{D} = \{x_1, \hdots, x_n\}$ the kernel gives rise to the $n \times n$ \textit{Gram matrix} $K_{ij} = k(x_i, x_j)$.
 As the kernel is PSD so is $K$.
-Methods which use the kernel matrix $K$ are called \textit{kernel machines}, and can by construction be tweaked by changing the chosen kernel function and its hyper parameters. In fact, the performance of these methods are highly dependent on the choice of kernel (and thus Gram matrix), since this decides the feature space that is utilized. The kernel implicitly sets the feature space being used; another way of viewing a kernel function is $k(x,x') = \langle \phi (x), \phi (x') \rangle$, where $\phi (\cdot)$ is the implicit feature space mapping. Notice that Mercer (1909) showed that a necessary and sufficient condition for a symmetric function to be a kernel, i.e. to give existence of a corresponding feature space, is that it is positive definite \cite{genton}.
+Methods which use the kernel matrix $K$ are called \textit{kernel machines}, and can by construction be tweaked by changing the chosen kernel function and its hyperparameters. In fact, the performance of these methods are highly dependent on the choice of kernel (and thus Gram matrix), since this decides the feature space that is utilized. The kernel implicitly defines the feature space; another way of viewing a kernel is $k(x,x') = \langle \phi (x), \phi (x') \rangle$, where $\phi (\cdot)$ is the implicit feature space mapping. Notice that Mercer (1909) showed that a necessary and sufficient condition for a symmetric function to be a kernel, i.e. to give existence to a corresponding feature space, is that it is positive definite \cite{genton}.
 
 \subsection{Important Classes of Kernels}
 
 Computational reduction for kernel-based methods can be provided by using different classes of kernels, for instance compactly supported kernels and separable nonstationary kernels \cite{genton}. These types of kernels will be described here. 
 
-Compactly supported kernels are kernels that vanish whenever the distance between two vectors is larger than a certain distance $d$. This distance is often called the range of the kernel \cite{genton}. The usage of such kernels can be a great advantage when performing computations in kernel machines, because the vanishing kernel for distances larger than $d$ yields a sparse Gram matrix. This can lead to reduced storage cost and computational cost, because one can solve linear systems involving the matrix with sparse linear algebra techniques. The downfall with this technique is that one has to use compactly supported kernels to yield the performance boost. Fortunately, large classes of such kernels can be constructed \cite{genton}. Hamers et al \cite{hamers} investigate the use of compactly supported Gaussian RBF kernels in least-squares support vector machines (LS-SVM). Notice that in these machines one finds the solution by solving a set of linear equations in stead of a convex quadratic programming problem, which is solved in regular SVMs. This leads to the possibility of using different standard numerical methods for solving linear systems, like Cholesky factorization and Krylov methods (e.g. conjugate gradient), where their respective memory requirements and computational costs can be reduced by the use of compactly supported Gaussian RNF kernels \cite{hamers}.
+Compactly supported kernels are kernels that vanish whenever the distance between two vectors is larger than a certain distance $d$. This distance is often called the \textit{range} of the kernel \cite{genton}. The usage of such kernels can be a great advantage when performing computations in kernel machines, because the vanishing kernel for distances larger than $d$ yields a sparse Gram matrix. This can lead to reduced storage and computational costs, because one can solve linear systems involving the matrix with sparse linear algebra techniques. The downfall with this technique is that one has to use compactly supported kernels to yield the performance boost. Fortunately, large classes of such kernels can be constructed. Hamers et al \cite{hamers} investigate the use of compactly supported Gaussian RBF kernels in least-squares support vector machines (LS-SVM). Notice that in these machines one finds the solution by solving a set of linear equations instead of a convex quadratic programming problem, which is solved in regular SVMs. This leads to the possibility of using standard numerical methods for solving linear systems, like Cholesky factorization and Krylov methods (e.g. conjugate gradient), where their respective memory requirements and computational costs can be reduced by the use of compactly supported Gaussian RNF kernels \cite{hamers}.
 
-Separable nonstationary kernels are a combination of two classes of kernels: \textit{nonstationary} and \textit{separable}. The most general class of kernels is the class of nonstationary kernels. These kernels depend explicitly on the two input arguments. This is in contrast to \textit{stationary} kernels, which only depend on the vector separating the two arguments (\textit{anisotropic stationary} kernels) or simply the norm of the vector separating the two arguments (\textit{isotropic stationary} kernels). An example of a nonstatinary kernel is the well-known polynomial kernel $k(x,x') = (x^Tx' + b)^p, \hspace{0.2em} b \in \mathbb{R}$, of polynomial degree $p$. The separable nonstationary kernels are a particular family of nonstationary kernels, that can be written on the form $k(x,x') = k_1(x)k_2(x')$, where $k_1$ and $k_2$ are stationary kernels. These can be used to reduce computational burden because the Gram matrix they give rise to can be written as a Kronecker product (a generalization of the outer product from vectors to matrices) of two vectors defined by $k_1$ and $k_2$ respectively \cite{genton}. For instance, consider again the dataset $\mathcal{D} = \{x_1, \hdots, x_n\}$. Instead of having to evaluate $K_{ij} = k(x_i, x_j), \hspace{0.2em}, \forall x_i,x_j \in \mathcal{D}$ it suffices to evaluate $k_1(x_i) \hspace{0.2em}, \forall x_i \in \mathcal{D}$ and $k_2(x_i), \hspace{0.2em} \forall x_i \in \mathcal{D}$, since the Gram matrix of a separable nonstationary kernel can be calculated by an outer product of two column vectors produced by these evaluations. This leads to a reduction in the number of evaluations required from $n^2$ to $2n$. 
+Separable nonstationary kernels are a combination of two classes of kernels: \textit{nonstationary} and \textit{separable}. The most general class of kernels is the class of nonstationary kernels. These kernels depend explicitly on the two input arguments. This is in contrast to \textit{stationary} kernels, which only depend on the vector separating the two arguments (\textit{anisotropic stationary} kernels) or simply the norm of the vector separating the two arguments (\textit{isotropic stationary} kernels). An example of a nonstatinary kernel is the well-known polynomial kernel $k(x,x') = (x^Tx' + b)^p, \hspace{0.2em} b \in \mathbb{R}$, of polynomial degree $p$. The separable nonstationary kernels are a particular family of nonstationary kernels, that can be written on the form $k(x,x') = k_1(x)k_2(x')$, where $k_1$ and $k_2$ are stationary kernels. These can be used to reduce computational burden because the Gram matrix they give rise to can be written as a Kronecker product (a generalization of the outer product from vectors to matrices) of two vectors defined by $k_1$ and $k_2$ respectively \cite{genton}. For instance, consider again the dataset $\mathcal{D} = \{x_1, \hdots, x_n\}$. Instead of having to evaluate $K_{ij} = k(x_i, x_j), \hspace{0.2em} \forall x_i,x_j \in \mathcal{D}$ it suffices to evaluate $k_1(x_i) \hspace{0.2em}, \forall x_i \in \mathcal{D}$ and $k_2(x_i), \hspace{0.2em} \forall x_i \in \mathcal{D}$, since the Gram matrix of a separable nonstationary kernel can be calculated by an outer product of two column vectors produced by these evaluations. This leads to a reduction in the number of evaluations required from $n^2$ to $2n$. 
 
 \subsection{Gaussian Processes}
 Gaussian processes (GP) can be defined in multiple ways.
-In our case it is beneficial to view it as a distribution over functions.
+In our case it is beneficial to view them as distributions over functions.
 Rasmussen and Williams \cite{rasmussen} provide the definition \textit{a Gaussian process is a collection of random variables, any finite number of which gave a joint Gaussian distribution}.
 The processes take advantage of the many convenient properties of the Gaussian distribution.
-Mathematically, letting $m(x) = E[f(x)]$ be the mean function and $k(x, x') = \text{cov}(f(x), f(x')) =  E[(f(x) - m(x))(f(x') - m(x'))]$ the covariance function, a Gaussian process can be written as 
+Mathematically, letting $m(x) = E[f(x)]$ be the mean function and $k(x, x') = \text{cov}(f(x), f(x')) =  E[(f(x) - m(x))(f(x') - m(x'))]$ be the covariance function, a Gaussian process can be written as 
 \begin{equation*}
         f(x) \sim \mathcal{GP}(m(x), k(x,x')).
 \end{equation*}
@@ -94,8 +94,8 @@ Note that the similar notation for kernel functions and covariance functions is 
 In GPs the mean function is usually set to be zero, which means that the process is completely described by its covariance function.
 
 A common use of GPs is in regression.
-We have access to $n$ data pairs $(x_1, y_1), \hdots, (x_n, y_n)$ where $y_i$ is the function evaluation at $x_i$ with added noise; $y_i = f(x_i) + \varepsilon$.
-As usual assuming iid Gaussian noise $\varepsilon$ with variance $\sigma_n^2$, the covariance matrix of the observed values is $\text{cov}(y) = K + \sigma_n^2I$.
+We have access to $n$ data pairs $\{(x_1, y_1), \hdots, (x_n, y_n)\}$ where $y_i$ is the function evaluation at $x_i$ with added noise; $y_i = f(x_i) + \varepsilon$.
+Assuming iid Gaussian noise $\varepsilon$ with variance $\sigma_n^2$, the covariance matrix of the observed values is $\text{cov}(y) = K + \sigma_n^2I$.
 Our interest lies in predicting new function values $f_*$ at $x_*$, for simplicity assumed to be a single point.
 Assuming zero mean function, the joint distribution is
 \begin{equation*}
@@ -110,35 +110,33 @@ Assuming zero mean function, the joint distribution is
 \end{bmatrix}
 \right).
 \end{equation*}
-Here $k_* = k(x, x_*)$ is the vector of covariances between the data and the new point $x_*$.
-We are after the conditional distribution of $f_*$, which has the known form
+Here $k_* = k(x, x_*)$ is the vector of covariances between the data and the new point $x_*$. The conditional distribution of $f_*$, which is where our interest lies, has the known form
 \begin{equation*}
-       f_* | x, y, x_* \sim \mathcal{N}(\bar{f}_*, V[f_*])  
+       f_* | x, y, x_* \sim \mathcal{N}(\bar{f}_*, V[f_*]),
 \end{equation*}
 where 
 \begin{align}
         \label{gp_pred}
-        \bar{f_*} &= k_*^T (K + \sigma_n^2I)^{-1}y \\
+        \bar{f_*} &= k_*^T (K + \sigma_n^2I)^{-1}y, \\
         V[f_*] &= k(x_*, x_*) - k_*^T (K + \sigma_n^2 I)^{-1}k_*.
 \end{align}
-To do model selection, i.e. tuning of the hyper parameters in the chosen covariance function, we also state the log marginal likelihood of $y$,
+To do model selection, i.e. tune the hyperparameters in the chosen covariance function, the log marginal likelihood of $y$ is also stated;
 \begin{equation}
        \log p(y | x) = -\frac{1}{2}y^T(K + \sigma_n^2I)^{-1}y - \frac{1}{2} \log |K + \sigma_n^2 I| - \frac{n}{2} \log 2\pi. 
 \end{equation}
-It is now apparent that in order to do GP regression we need to invert $(K + \sigma_n^2I)$—or for prediction solve the system $(K + \sigma_n^2I)v = y$ for $v$. 
+It is now apparent that in order to do GP regression we need to invert $(K + \sigma_n^2I)$ — or for prediction solve the system $(K + \sigma_n^2I)v = y$ for $v$. 
 For smaller $n$ this can be done by means of Cholesky factorization, but becomes inefficient as $n$ grows large.
 
 
 \subsection{Support Vector Machines}
-Support Vector Machines (SVMs) is a popular machine learning technique commonly used for classifying data into two groups.
-Again we have $n$ data samples $(x_1, y_1,), \hdots, (x_n, y_n)$, where $y_i \in \{ 1, -1 \}$ now is a binary variable, and $x_i \in \mathbb{R}^d$.
-We classify the points through a separating hyperplane $w^Tx + w_0$, such that the classifying function is $f_w(x) = \text{sgn}(w^Tx + w_0)$.
-The goal is to find the "best" $w, w_0$, i.e., finding the optimal hyperplane.
+A Support Vector Machine (SVM) is a popular machine learning technique commonly used for binary classifying and regression. We describe a simple binary classifier, as an example of how this framework can be used. As earlier, define $n$ data points $\{(x_1, y_1,), \hdots, (x_n, y_n)\}$, where $y_i \in \{ 1, -1 \}$ now is a binary variable, and $x_i \in \mathbb{R}^d$.
+The goal is to classify the points into their respective groups by means of a separating hyperplane $w^Tx + w_0$, such that the classifier takes the form $f_w(x) = \text{sgn}(w^Tx + w_0)$.
+The goal is to find the "best" parameters $w, w_0$, i.e. to discover the optimal hyperplane.
 The SVM finds this hyperplane by solving the optimization problem \cite{smola}
 \begin{mini*}|s|{w}{\frac{1}{2}||w||^2}{}{}
 \addConstraint{y_i(w^Tx_i + w_0)}{\geq 1}.
 \end{mini*}
-This is a quadratic programming problem with linear constraint.
+This is a quadratic programming problem with a linear constraint.
 It can be solved directly, but it is practical to make use of Lagrangian duality theory and instead work with its dual representation
 \begin{maxi}|s|{\alpha \in \mathbb{R}^n}{\sum_{i = 1}^n \alpha_i - \frac{1}{2}\sum_{i = 1}^n \sum_{j = 1}^n \alpha_i \alpha_j y_i y_j x_i^T x_j}{}{}
 \addConstraint{\alpha_i}{\geq 0}
@@ -146,84 +144,70 @@ It can be solved directly, but it is practical to make use of Lagrangian duality
 \label{eq:svm_qp}
 \end{maxi}
 It is worth noticing that we now have to optimize for $n$ parameters $\alpha_1, \hdots, \alpha_n$, not $d$ as in the primal formulation.
-This is still a linear classifier—where are the kernels?
-Noticing that the data points only appear in the methods as parts of an inner products (dot products as $x_i \in \mathbb{R}^d$), we can \textit{kernelize} the method.
-I.e., we map the input points to a high dimensional space through the function $\phi: \mathbb{R}^d \rightarrow \mathbb{R}^D, \ D \gg d$.
+This is still a linear classifier — where are the kernels?
+Noticing that the data points only appear as inner products (in fact, as dot products, since $x_i \in \mathbb{R}^d$), the method can be \textit{kernelized}. The input points are mapped to a higher dimensional space through the function $\phi: \mathbb{R}^d \rightarrow \mathbb{R}^D, \ D \gg d$.
 The hyperplane is then created in $\mathbb{R}^D$ where the data might be separable.
-We choose $\phi$ in such a way that we know the function $k$ where
+The function $\phi$ is chosen in such a way that the function $k$ can be defined, where
 \begin{align*}
         &k : \mathbb{R}^d \times \mathbb{R}^d \rightarrow \mathbb{R} \\
         &x,x'  \mapsto  k(x, x') = \langle \phi(x), \phi(x') \rangle.
 \end{align*}
-The model is now on the form $f_\alpha(x) = \text{sgn}(\sum_{i = 1}^{n}y_i \alpha_i k(x, x_i) + \alpha_0)$ where $\alpha$ is found though the quadratic optimization problem
+The classifier is now on the form $f_\alpha(x) = \text{sgn}(\sum_{i = 1}^{n}y_i \alpha_i k(x, x_i) + \alpha_0)$, where $\alpha$ is found through solving the quadratic optimization problem
 \begin{maxi*}|s|{\alpha \in \mathbb{R}^n}{\sum_{i = 1}^n \alpha_i - \frac{1}{2}\sum_{i = 1}^n \sum_{j = 1}^n \alpha_i \alpha_j y_i y_j k(x_i, x_j)}{}{}
 \addConstraint{\alpha_i}{\geq 0}
 \addConstraint{\sum_{i = 1}^n \alpha_i y_i}{=0}.
 \end{maxi*}
-When $k$ is positive definite this is a convex problem, which when $n$ is large can be solved more efficiently using numerical techniques.
-Also note that the theory on SVMs can be developed further to include soft margin hyperplanes, regression, multiclass models, etc.
+When $k$ is positive definite this is a convex problem, which when $n$ is large can be solved efficiently using numerical techniques.
+Note that the theory on SVMs can be developed further to include soft margin hyperplanes, regression, multiclass models and much more. 
 
 
-
-
-
-\subsection{Condition number}
+\subsection{Condition Number}
 The \textit{condition number} of a matrix $A$ is defined as $\kappa (A) = ||A|| ||A^{-1}||$ \cite{quarteroni}.
-Note that the norm $|| \cdot ||$ can be any consistent norm, but takes on a different form dependent on which one is chosen.
-From the definition it is hard to say exactly what the condition number represent.
-We often talk about the condition number in relation to the numerical properties of a linear system $Ax = b$.
-The system is considered \textit{ill-conditioned} if $\kappa (A)$ is large, and \textit{well-conditioned} if it is small (close to 1, its lower bound).
-Having a large condition number means that the linear system is \textit{sensitive} to small perturbations.
-Meaning that if we change $x$ by a small amount, the solution $b$ could change a lot—and vice versa.
-This becomes a problem when trying to obtain numerical approximations to the systems, and can cause numerical solvers to perform poorly.
+Note that the norm $|| \cdot ||$ can be any consistent norm.
+From the definition it is not immediately clear what the condition number represents.
+The condition number is often discussed in relation to the numerical properties of a linear system $Ax = b$.
+Such a system is considered \textit{ill-conditioned} if $\kappa (A)$ is large and \textit{well-conditioned} if it is small (close to 1, which is its lower bound).
+Having a large condition number means that the linear system is \textit{sensitive} to small perturbations — a small change in $x$ could yield a large change in the solution $b$, and vice versa.
+Naturally, this quickly becomes a problem when trying to obtain numerical approximations to such systems, since it can cause numerical solvers to perform poorly.
 
 The most commonly used condition number is the one induced by the 2-norm.
-It can be shown that is has the form $\kappa_2 (A) = ||A||_2 ||A^{-1}||_2 = \frac{\sigma_1(A)}{\sigma_n(A)}$ where $\sigma_1 (A)$ and $\sigma_n(A)$ are the maximum and minimum singular value.
-More importantly—at least for us—is that if $A$ is symmetric positive definite it has the form $\kappa_2(A) = \frac{\lambda_\text{max}}{\lambda_\text{min}}$ where $\lambda_{\text{max}}$ and $\lambda_{\text{min}}$ is the largest and smallest eigenvalue of $x$.
+It can be shown that it has the form $\kappa_2 (A) = ||A||_2 ||A^{-1}||_2 = \frac{\sigma_1(A)}{\sigma_n(A)}$, where $\sigma_1 (A)$ and $\sigma_n(A)$ are the maximum and minimum singular values respectively.
+More importantly, at least for us, if $A$ is symmetric positive definite it has the form $\kappa_2(A) = \frac{\lambda_\text{max}}{\lambda_\text{min}}$, where $\lambda_{\text{max}}$ and $\lambda_{\text{min}}$ are the largest and smallest eigenvalues of $A$ respectively.
 This expression provides a more intuitive view of the condition number.
-If the eigenvalues of a matrix is very similar, it scales vectors $x$ by a similar amount.
-In the same way if some eigenvalues are very large, then vectors close to their respective eigenvectors will be scaled more than others.
-Thus some iterative algorithms can face problems with some directions and act more unstable.
+If the eigenvalues of a matrix are very similar, it scales vectors $x$ by a similar amount.
+Similarly, if some eigenvalues are very large, vectors similar to their corresponding eigenvectors will be scaled more than others.
+Thus some iterative algorithms can face problems with some directions, which quickly can lead to instability.
 
 
+%\section{Computational Feasibility}
 
 
+%\section{Condition Number of the Gram Matrix}
+
+%https://scicomp.stackexchange.com/questions/7561/do-rbf-kernel-matrices-tend-to-be-ill-conditioned
 
 
-
-
-
-
-
-\section{Computational Feasibility}
-The problem this work is intended to describe and tackle is the problem of computational feasibility for kernel machines. A simple evaluation of every element in the Gram matrix is $\mathcal{O}(n^2)$ operations. Since this is obviously not the only computation that needs to be done when using these methods, they can often become computationally expensive. In order to remedy this problem one possible solution is using \textit{Matrix-free} methods, which in general do not need the entire Gram matrix explicitly. Instead they work by calculating matrix-vector products $Kx$ for arbitrary $x$ \cite{davies}. Some examples of methods are \textit{conjugate gradient}, \textit{power iteration} and \textit{Lanczos algorithm} \cite{wiki:Matrix-free_methods}. These methods are iterative, which means that their numerical stability and convergence rates are related to the condition number of the Gram matrix $\kappa(K)$. Low values of the condition number means that the problem is well-conditioned, which implies numerically stable calculations in few iterations. Large values of the condition number means the the problem is ill-conditioned—this leads to slow convergence or no convergence at all. Pre-conditioning can be used to ensure that $\kappa(K)$ stays low, leading to efficient and accurate iterative methods \cite{davies}.
-
-\section{Condition Number of the Gram Matrix}
-
-https://scicomp.stackexchange.com/questions/7561/do-rbf-kernel-matrices-tend-to-be-ill-conditioned
-
-
-\section{Interior point methods}
-Many kernel machines require solving of a quadratic optimization problems with linear constraints. 
-We have already seen an example in the case of SVMs where we have to solve \ref{eq:svm_qp} for $\alpha$.
-Interior point methods are a class of optimization methods where we apply convex optimization techniques to the system of equations derived by KKT theory.
+\section{Interior Point Methods}
+Many kernel machines require solution of quadratic optimization problems with linear constraints. 
+We have already seen an example in the case of SVMs where equation \eqref{eq:svm_qp} has to be solved for $\alpha$.
+Interior point methods are a class of optimization methods where convex optimization techniques are applied to a system of equations derived by KKT theory.
 The methods are most commonly applied to linear problems, but can also be tweaked to work on quadratic problems (or convex problems in general).
-They are specially effective on semi-definite problems, which always apply to problems in kernel machines.
-\subsection{Primal-dual path following}
-The most commonly used interior point method is the primal-dual path following method.
+They are especially effective on semi-definite problems, which always applies to problems in kernel machines.
+\subsection{Primal-Dual Path Following}
+The most commonly used interior point method is the \textit{primal-dual path following} method.
 A general form of the quadratic problem which we wish to solve is 
 \begin{mini*}|s|{x}{c^Tx + \frac{1}{2}x^T Qx }{}{}
 \addConstraint{Ax}{=b}
-\addConstraint{x}{\geq 0}
+\addConstraint{x}{\geq 0}.
 \end{mini*}
 Letting $\lambda$ and $s$ be the dual variables concerning the equality and inequality constraints respectively, the KKT optimality conditions are
 \begin{align*}
         &A^T\lambda - Qx + s = c \\
         &Ax = b \\
         &XSe = 0 \\
-        &x,s \geq 0.
+        &x,s \geq 0,
 \end{align*}
-Here $X$ and $S$ are diagonal matrices with the vectors $x$ and $s$ on the diagonal, and $e$ is the vector $(1 \ \hdots \ 1)^T$.
+where $X$ and $S$ are diagonal matrices with the vectors $x$ and $s$ on the diagonal and $e = (1 \ \hdots \ 1)^T$.
 Defining the function
 \begin{equation*}
         F(x,\lambda,s) =
@@ -231,11 +215,11 @@ Defining the function
         A^T \lambda -Qx + s - c \\
         Ax - b \\
         XSe \\
-\end{bmatrix}
+\end{bmatrix},
 \end{equation*}
-we have an equivalent non-linear system of equations $F(x, \lambda, s) = 0$, which we can solve using familiar techniques such as the Newton-Raphson method.
-Unfortunately solving this system as is works poorly in practice \cite{wright}.
-Instead we solve the slightly different perturbed system 
+an equivalent non-linear system of equations $F(x, \lambda, s) = 0$ can be defined. This can be solved using familiar techniques such as the Newton-Raphson method.
+Unfortunately, solving this exact system works poorly in practice \cite{wright}.
+A better option is to solve a slightly different perturbed system;
 \begin{equation*}
         F(x,\lambda,s) =
 \begin{bmatrix}
@@ -245,91 +229,85 @@ Instead we solve the slightly different perturbed system
 \end{bmatrix}
 =0.
 \end{equation*}
-This has the effect of "staying away" from the borders of the feasible region, and instead move towards the solution through the interior, hence interior point methods.
-In contrast the simplex method moves towards the solution \textit{only} along the border of the feasible region.
-Interior point methods are often chosen for large problems.
+This has the effect of "staying away" from the borders of the feasible region, moving towards the solution through the interior of the region instead. This is where this class of methods derived its name from.
+In contrast, the simplex method moves towards the solution \textit{exclusively} along the border of the feasible region.
+Interior point methods are often chosen for large problems, because of their advantageous properties over other methods. 
 
-There exists much theory solving this perturbed system efficiently, involving breaking it down into several steps where the structure of the involved matrices are taken advantage of, e.g. by factorization methods, to solve it efficiently.
-Jack Gondzio \cite{gondzio} proposes a entirely matrix free implementation of an interior point method which can be used on quadratic programming problems.
+There exists plenty of theory on solving this perturbed system efficiently, often involving breaking it down into several steps where the structure of the involved matrices are taken advantage of, e.g. by factorization methods, to solve it efficiently.
+Jack Gondzio \cite{gondzio} proposes an entirely matrix free implementation of an interior point method which can be used on quadratic programming problems.
 
 
-
-\section{Conjugate gradient method}
-The conjugate gradient method solves linear systems on the form $Ax = b$.
-This is a common part of many kernel machines, e.g. in GP regression which we have seen needs the solution to $(K + \sigma_n^2I)v = y$ to solve \eqref{gp_pred}.
-The algorithm works by treating the system as an optimization problem where we want to minimize 
+\section{Conjugate Gradient Method}
+The conjugate gradient (CG) method solves linear systems of the form $Ax = b$.
+This is a common part of many kernel machines, like for example in GP regression which requires the solution of $(K + \sigma_n^2I)v = y$ in order to solve equation \eqref{gp_pred}.
+The algorithm works by treating the system as an optimization problem, where the goal is to minimize the function 
 \begin{equation}
         \label{potential}
         \phi (y) = \frac{1}{2}y^T Ay - y^Tb,
 \end{equation}
 which has its optimal solution at $x$.
-One of the most common ways of numerically solving such an optimization problem is by choosing an initial point $x^{(0)}$ and iteratively compute descent directions $d^{(k)}$ to find $x^{(k+1)} = x^{(k)} + \alpha_k d^{(k)}$.
-\textit{Steepest descent} chooses $d^{(k)} = -\nabla \phi (x^{(k)}) = b - Ax^{(k)}$, and since $\phi$ is quadratic it can be shown \cite{quarteroni} that the optimal $\alpha_k$ is given by
+One of the commonly used procedures for solving such an optimization problem numerically is choosing an initial point $x^{(0)}$ and iteratively computing descent directions $d^{(k)}$ to find $x^{(k+1)} = x^{(k)} + \alpha_k d^{(k)}$.
+For example, \textit{Steepest descent} sets $d^{(k)} = -\nabla \phi (x^{(k)}) = b - Ax^{(k)}$. In this method it can be shown \cite{quarteroni} that the optimal $\alpha_k$ is given by
 \begin{equation*}
-        \alpha_k = \frac{(d^{(k)})^Td^{(k)}}{(d^{(k)})^TAd^{(k)}}.
+        \alpha_k = \frac{(d^{(k)})^Td^{(k)}}{(d^{(k)})^TAd^{(k)}},
 \end{equation*}
-It can be shown that the convergence speed of steepest descent descent is bounded by the condition number of $A$, $\kappa(A)$, which for symmetric psd matrices is the ratio between the largest and smallest eigenvalue, $\lambda_{(n)}/\lambda_{(1)}$ \cite{shewchuk}.
-This can be a problem if $A$ is ill-conditioned and the steepest descent method needs many iterations to converge.
-
+since $\phi$ is quadratic. Moreover, it can be shown that the convergence speed of steepest descent is bounded by the condition number of $A$, $\kappa(A)$, which for symmetric positive definite matrices is the ratio between the largest and smallest eigenvalue, $\lambda_{(n)}/\lambda_{(1)}$ \cite{shewchuk}. Ill-conditioning of $A$ can lead to problems, where the steepest descent method would need many iterations to converge.
 
 The details and motivation behind the conjugate gradient algorithm are quite intricate and dense.
-In essence we notice the properties of the directions of the steepest descent method where it converges quickly, and impose orthogonality restrictions on the descent directions to make the algorithm converge in at most $n$ iterations.
+In essence, we notice the properties of the directions of the steepest descent method where it converges quickly and impose orthogonality restrictions on the descent directions to make the algorithm converge in at most $n$ iterations.
 By making sure every direction is optimal we can get very close to the optimal solution without completing all of the $n$ iterations.
-For a detailed and aptly named derivation of the conjugate gradient algorithm consult \textit{An introduction of the conjugate gradient method without the agonizing pain} \cite{shewchuk} by Jonathan Richard Shewchuk.
+For a detailed and aptly named derivation of the conjugate gradient algorithm consult \textit{An introduction to the conjugate gradient method without the agonizing pain} \cite{shewchuk} by Jonathan Richard Shewchuk.
 
-The benefit of using the CG algorithm or steepest descent is that we replace the $\mathcal{O}(n^3)$ linear systems my matrix-vector products which can be solved in $\mathcal{O}(m)$ time where $m$ is the number of non-zero elements in $A$.
-Both steepest descent and CG has a space complexity $\mathcal{O}(m)$ and time complexity $\mathcal{O}(m \kappa)$ and $\mathcal{O} (m \sqrt{\kappa})$ respectively \cite{shewchuk}.
+The benefit of using the CG algorithm or steepest descent is that the $\mathcal{O}(n^3)$ linear systems are replaced by matrix-vector products which can be solved in $\mathcal{O}(m)$, where $m$ is the number of non-zero elements in $A$.
+Both steepest descent and CG have space complexity $\mathcal{O}(m)$, as well as time complexity $\mathcal{O}(m \kappa)$ and $\mathcal{O} (m \sqrt{\kappa})$ respectively \cite{shewchuk}.
 
 \section{Preconditioning}
-\textit{Preconditioning} a matrix $A$ refers to applying a \textit{preconditioner} $P$ so that $\kappa(P^{-1}A) \ll \kappa(A)$. \cite{cutajar}
+\textit{Preconditioning} a matrix $A$ refers to applying a \textit{preconditioner} $P$ such that $\kappa(P^{-1}A) \ll \kappa(A)$ \cite{cutajar}.
 Many iterative methods make use of this by solving the preconditioned system $P^{-1}Ax = P^{-1}b$ instead of $Ax = b$.
-This is done in the popular preconditioned conjugate gradient method.
+This is done in the popular \textit{preconditioned conjugate gradient} method.
 Note that in many algorithms $P^{-1}$ does not need to be known explicitly.
-Quarteroni et al \cite{quarteroni} divides preconditioners into two main categories: algebraic and functional preconditioners. They list diagonal preconditioners, polynomial preconditioners, least-squares preconditioners and incomplete LU/Cholesky factorization as examples.
+Quarteroni et al \cite{quarteroni} divides preconditioners into two main categories: algebraic and functional preconditioners. The authors list diagonal preconditioners, polynomial preconditioners, least-squares preconditioners and incomplete LU/Cholesky factorization as examples.
 
-\subsection{Nyström approximation}
+\subsection{Nyström Approximation}
 The goal of the Nyström approximation is not to reduce the condition number of $K$, but the rank.
-We choose $m < n$ inducing points, and approximate $K$ by $\tilde{K}  = K_{nm}K_{mm}^{-1}K_{mn}$ \cite{rasmussen}.
-$K_{mm}$ is the evaluation of the kernel function over the chosen induced points, and $K_{nm}$ is the evaluation between the original $n$ points.
-Now the approximation has rank $\leq m$, and the inverse can be computed in $\mathcal{O}(m^3)$ which is significantly lower than $\mathcal{O}(n^3)$.
+We choose $m < n$ inducing points and approximate $K$ by $\tilde{K}  = K_{nm}K_{mm}^{-1}K_{mn}$ \cite{rasmussen}.
+$K_{mm}$ is the evaluation of the kernel function over the chosen induced points, while $K_{nm}$ is the evaluation between the original $n$ points.
+Now the approximation has rank $\leq m$ and the inverse can be computed in $\mathcal{O}(m^3)$ which can be significantly lower than $\mathcal{O}(n^3)$.
 
-As for which $m$ inducing points to choose Drineas and Mahoney \cite{drineas} suggests drawing uniformly random samples with replacement, while Rasmussen and Williams discusses a greedy algorithm for selecting the points.
-These greedy algorithms generally start from an empty set of chosen indices $I$, and iteratively selects the best point to include by some chosen criterion.
+As for which $m$ inducing points to choose, Drineas and Mahoney \cite{drineas} suggests drawing uniformly random samples with replacement, while Rasmussen and Williams discuss a greedy algorithm for selecting the points.
+These greedy algorithms generally start from an empty set of chosen indices $I$ and iteratively select the best point to include by some specific criterion.
 
-\subsection{Subset of regressors}
+\subsection{Subsets of Regressors}
 A popular approximation to GP regression is achieved by only choosing a subset of the regressors.
-It can be shown that the mean predictor in GPs \ref{gp_pred} can be achieved by considering the model $f(x_*) = \sum_{i = 1}^{n}\alpha_i k(x_*, x_i)$ with prior $\alpha \sim \mathcal{N}(0, K^{-1})$ \cite{rasmussen}.
-As in the Nyström approximation we choose a subset of $m$ data points, and approximate the model by
+It can be shown that the mean predictor in GPs, referring to equation \eqref{gp_pred}, can be achieved by considering the model $f(x_*) = \sum_{i = 1}^{n}\alpha_i k(x_*, x_i)$ with prior $\alpha \sim \mathcal{N}(0, K^{-1})$ \cite{rasmussen}.
+As in the Nyström approximation we choose a subset of $m$ data points and approximate the model by
 \begin{equation*}
-        f_{SR}(x_*) = \sum_{ i = 1}^{m}\alpha_i k(x_*, x_i), \quad \quad \alpha_m \sim \mathcal{N}(0, K_{mm}^{-1}).
+        f_{SR}(x_*) = \sum_{ i = 1}^{m}\alpha_i k(x_*, x_i), \quad \alpha_m \sim \mathcal{N}(0, K_{mm}^{-1}).
 \end{equation*}
-Just as before we apply the properties of the Gaussian distribution to obtain
+The properties of the Gaussian distribution are applied, to obtain
 \begin{align*}
         \bar{f}_{SR}(x_*) &= k_m (x_*)^T (K_{mn}K_{nm} + \sigma_n^2 K_{mm})^{-1}K_{mn}y \\
         V[f_{SR}(x_*)] &= \sigma_n^2 k_m (x_*)^T(K_{mn}K_{nm} + \sigma_n^2 K_{mm})^{-1} k_m(x_*).
 \end{align*}
-The matrix computations in the stated equations take $\mathcal{O}(m^2n)$ time to carry out, but after they are computed the prediction of new test points are linear in $m$.
+The matrix computations in the stated equations take $\mathcal{O}(m^2n)$ time to carry out, but after they are computed the predictions of new test points are linear in $m$.
 In this case, a criterion for the greedy selection of the $m$ points could be the residual sum of squares $|y - K_{nm}\alpha_m|^2$.
 
 
 
 \section{Conclusion}
 The Gram matrix in kernel machines has good and bad qualities when used in numerical approximations.
-Firstly—it is large, which is good.
-This means that traditional solutions requires much from our computer in terms of memory allocation and speed.
-Secondly—it is symmetric positive semi-definite.
-Having this property make the numerical computations much easier, and we can make use of a wide range of methods having this as a criteria.
-For instance, in SVMs the quadratic programming problem is convex as a consequence.
-
+Firstly — it is large, which, without any further considerations, is a good property, because it makes it possible to find solutions in large spaces. However, the size of the matrix yields to large requirements from computers in terms of memory and speed when solving the corresponding problems of each model. 
+Secondly — it is symmetric positive semi-definite.
+This property makes the numerical computations much easier and we can make use of a wide range of methods having which simply require this. For instance, the quadratic programming problem that needs to be solved in SVMs is convex as a consequence of this property of the Gram matrix. We have seen some examples of how numerical methods can be used to improve the efficacy of computing kernel machines in general, as well as some examples for specific kernel methods like Gaussian processes and SVMs. 
 
 
 \section{Future Work}
-In this work we looked how numerical approximations can help when doing GP regression and SVMs for classifications.
-Obviously there are many more kernel machines, many more kernels and many more methods of numerical approximation out there.
-Numerical methods are a field of its own, and is all about tweaking known methods like Cholesky factorization or Newton-Raphson to suit the specific problems.
-In that sense numerical approximation for kernel machines is a two part problem, first understand the properties of the kernel machine, and then find a way to use those properties in the numerical approximation.
+In this work we review how numerical approximations can help when building GP regressors and SVMs for classification.
+Obviously, there are many more kernel machines, many more kernels and many more methods of numerical approximation that could be reviewed.
+\textit{Numerical mathematics} is a large field in its own right, which oftentimes focuses on tweaking known methods like Cholesky factorization or Newton-Raphson to suit each specific problem.
+In this sense, numerical approximation for kernel machines is a two part problem — first one has to understand the properties of the kernel machine, before finding a way to use those properties in the numerical approximation.
 Given the wide range of kernel machines and applications, specific problems are plentiful.
-There are much more to read and understand, and much active research.
+Therefore, there is much more to investigate and understand, leading to plenty of active research.
 
 
 \printbibliography

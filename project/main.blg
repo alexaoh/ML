@@ -1,19 +1,19 @@
 [0] Config.pm:304> INFO - This is Biber 2.14 (beta)
 [0] Config.pm:307> INFO - Logfile is 'main.blg'
-[109] biber:322> INFO - === lø. juni 11, 2022, 11:50:02
-[127] Biber.pm:415> INFO - Reading 'main.bcf'
-[211] Biber.pm:943> INFO - Found 16 citekeys in bib section 0
-[227] Biber.pm:4256> INFO - Processing section 0
-[227] Utils.pm:75> INFO - Globbing data source 'sources.bib'
-[227] Utils.pm:91> INFO - Globbed data source 'sources.bib' to sources.bib
-[239] Biber.pm:4455> INFO - Looking for bibtex format file 'sources.bib' for section 0
-[241] bibtex.pm:1653> INFO - LaTeX decoding ...
-[265] bibtex.pm:1471> INFO - Found BibTeX data source 'sources.bib'
-[322] Utils.pm:293> WARN - month field 'mar' in entry 'genton' is not an integer - this will probably not sort properly.
-[427] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
-[427] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
-[427] Biber.pm:4084> INFO - Sorting list 'nty/global//global/global' of type 'entry' with template 'nty' and locale 'en-US'
-[427] Biber.pm:4090> INFO - No sort tailoring available for locale 'en-US'
-[451] bbl.pm:652> INFO - Writing 'main.bbl' with encoding 'UTF-8'
-[461] bbl.pm:755> INFO - Output to main.bbl
-[461] Biber.pm:128> INFO - WARNINGS: 1
+[113] biber:322> INFO - === lø. juni 11, 2022, 23:54:34
+[131] Biber.pm:415> INFO - Reading 'main.bcf'
+[217] Biber.pm:943> INFO - Found 16 citekeys in bib section 0
+[234] Biber.pm:4256> INFO - Processing section 0
+[234] Utils.pm:75> INFO - Globbing data source 'sources.bib'
+[234] Utils.pm:91> INFO - Globbed data source 'sources.bib' to sources.bib
+[246] Biber.pm:4455> INFO - Looking for bibtex format file 'sources.bib' for section 0
+[248] bibtex.pm:1653> INFO - LaTeX decoding ...
+[274] bibtex.pm:1471> INFO - Found BibTeX data source 'sources.bib'
+[354] Utils.pm:293> WARN - month field 'mar' in entry 'genton' is not an integer - this will probably not sort properly.
+[452] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[452] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[452] Biber.pm:4084> INFO - Sorting list 'nty/global//global/global' of type 'entry' with template 'nty' and locale 'en-US'
+[452] Biber.pm:4090> INFO - No sort tailoring available for locale 'en-US'
+[477] bbl.pm:652> INFO - Writing 'main.bbl' with encoding 'UTF-8'
+[487] bbl.pm:755> INFO - Output to main.bbl
+[487] Biber.pm:128> INFO - WARNINGS: 1
