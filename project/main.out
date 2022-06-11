@@ -1,0 +1,18 @@
+\BOOKMARK [1][-]{section.1}{Abstract}{}% 1
+\BOOKMARK [1][-]{section.2}{Introduction and previous work}{}% 2
+\BOOKMARK [1][-]{section.3}{Background}{}% 3
+\BOOKMARK [2][-]{subsection.3.1}{Kernel machines}{section.3}% 4
+\BOOKMARK [2][-]{subsection.3.2}{Important Classes of Kernels}{section.3}% 5
+\BOOKMARK [2][-]{subsection.3.3}{Gaussian Processes}{section.3}% 6
+\BOOKMARK [2][-]{subsection.3.4}{Support Vector Machines}{section.3}% 7
+\BOOKMARK [2][-]{subsection.3.5}{Condition number}{section.3}% 8
+\BOOKMARK [1][-]{section.4}{Computational Feasibility}{}% 9
+\BOOKMARK [1][-]{section.5}{Condition Number of the Gram Matrix}{}% 10
+\BOOKMARK [1][-]{section.6}{Interior point methods}{}% 11
+\BOOKMARK [2][-]{subsection.6.1}{Primal-dual path following}{section.6}% 12
+\BOOKMARK [1][-]{section.7}{Conjugate gradient method}{}% 13
+\BOOKMARK [1][-]{section.8}{Preconditioning}{}% 14
+\BOOKMARK [2][-]{subsection.8.1}{Nystr\366m approximation}{section.8}% 15
+\BOOKMARK [2][-]{subsection.8.2}{Subset of regressors}{section.8}% 16
+\BOOKMARK [1][-]{section.9}{Conclusion}{}% 17
+\BOOKMARK [1][-]{section.10}{Future Work}{}% 18
